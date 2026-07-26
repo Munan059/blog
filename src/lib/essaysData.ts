@@ -918,6 +918,312 @@ Android Studio 里点 Run，第一次编译要链接 NCNN 静态库与 OpenCV，
 `;
 
 
+
+
+export const PUREEDGE_VLM_STAGE4_MD = `# PureEdgeVLM 阶段四搭建记录
+
+> 项目代号：PureEdgeVLM · 目标设备：骁龙 865 手机，8GB 内存、纯 CPU · 技术栈：Kotlin + C++17 + NCNN + llama.cpp
+>
+> 一句话概括：把本地大模型 MiniCPM5-1B 接进 App，做纯文字多轮对话。阶段一、二、三已经让 App 能看图和文字，阶段四把大模型接进来，让零散的视觉结果变成一段自然语言。
+>
+> 本文所有路径都相对项目根 \`C:\\Users\\Blue\\Desktop\\work\\localai\`。
+
+---
+
+## 0. 阶段四
+
+阶段一、二、三结束时，App 已经能在手机上跑 YOLO 检测、ResNet50 场景识别和 PP-OCRv5 文字识别，但这些都是各看各的零散结果。阶段四的目标是把本地大模型 MiniCPM5-1B 接进 App，让用户直接在输入框打字，和模型进行纯文字的多轮对话，把前面那些视觉结果汇成一句人话。
+
+原总方案把编译 llama.cpp 放在阶段三，本项目实际推进时整体挪到了阶段四，阶段三专注 PP-OCRv5。这一阶段是纯文字对话，不复用阶段二、三的视觉三模型，也不做相机页与 Benchmark 页。纯文字路线最稳定、最省电、集成也最简单，符合总方案。
+
+---
+
+## 1. 这个阶段做了什么
+
+阶段四只碰大模型这一条线，其余视觉部分严格不动：
+
+- 只做 llama.cpp 集成与 MiniCPM5-1B 大模型加载、生成
+- 只做聊天界面，含输入框、发送、清空、对话气泡，与多轮上下文拼装
+- 只做 MatPool 内存复用与绑核调度这两个稳定性优化
+- 不做相机页与 Benchmark 页
+- 不引入真多模态模型，不复用阶段二、三的视觉三模型
+
+最终新增和改动的代码骨架如下，这套推理引擎、JNI 桥和聊天界面后面阶段五接着复用：
+
+| 文件 | 干什么 |
+| --- | --- |
+| \`app/src/main/cpp/llm_engine.h\` / \`llm_engine.cpp\` | 大模型推理引擎：加载 GGUF、生成文字、释放 |
+| \`app/src/main/cpp/native_bridge.cpp\` | C++ 与 Kotlin 的桥：加 \`llmLoad\` 与 \`llmGenerate\` 两个对外函数 |
+| \`app/src/main/java/com/topaz/pureedgevlm/NativeBridge.kt\` | Kotlin 侧桥：声明 external 函数与 \`LlmCallback\` 回调接口 |
+| \`app/src/main/java/com/topaz/pureedgevlm/MainActivity.kt\` | 聊天界面：输入框、发送、清空、对话气泡、多轮历史 |
+| \`app/src/main/cpp/CMakeLists.txt\` | 把 llama.cpp 静态库与 OpenMP 链进 App |
+| \`app/src/main/assets/models/llm/MiniCPM5-1B-Q4_K_M.gguf\` | 本地大模型权重文件 |
+
+---
+
+## 2. 编译 llama.cpp 安卓库
+
+**做什么**：把 llama.cpp 源码编译成一份专门给 arm64 架构的骁龙 865 用的运行库，后面我们的 C++ 代码要链接它才能跑大模型。
+
+打开 Git Bash 或任意命令行，进到项目根目录，把 llama.cpp 源码拉下来：
+
+\`\`\`bash
+cd /c/Users/Blue/Desktop/work/localai
+git clone --depth 1 git@github.com:ggml-org/llama.cpp.git app/src/main/cpp/third_party/llama.cpp
+\`\`\`
+
+> 国内直连 \`https://github.com/...\` 常被重置。优先用上面这个 SSH 地址，或换镜像备用：\`https://ghproxy.com/https://github.com/ggml-org/llama.cpp.git\`、\`https://kgithub.com/ggml-org/llama.cpp.git\`。脚本别只写一个源。
+
+确认你的 NDK 路径，一般在 \`C:\\Users\\Blue\\AppData\\Local\\Android\\Sdk\\ndk\\26.3.xxxxx\`，也就是阶段一用到的 r26c 版本，把你的 NDK 路径替换进去。然后编译安卓版，关键要关掉 examples/tests/tools，还要额外关 APP/SERVER/UI 与 GGML_OPENMP：
+
+\`\`\`bash
+cd /c/Users/Blue/Desktop/work/localai/app/src/main/cpp/third_party/llama.cpp
+mkdir build-android-arm64-v8a && cd build-android-arm64-v8a
+cmake -G Ninja \\
+  -DCMAKE_TOOLCHAIN_FILE="你的NDK路径/build/cmake/android.toolchain.cmake" \\
+  -DANDROID_ABI=arm64-v8a \\
+  -DANDROID_PLATFORM=android-28 \\
+  -DLLAMA_BUILD_EXAMPLES=OFF \\
+  -DLLAMA_BUILD_TESTS=OFF \\
+  -DLLAMA_BUILD_TOOLS=OFF \\
+  -DLLAMA_BUILD_APP=OFF \\
+  -DLLAMA_BUILD_SERVER=OFF \\
+  -DLLAMA_BUILD_UI=OFF \\
+  -DGGML_OPENMP=OFF \\
+  ..
+cmake --build . -j$(nproc)
+\`\`\`
+
+\`GGML_OPENMP=OFF\` 极其重要：NDK 不支持把 OpenMP 当作 CMake 依赖来编，不关会编译失败。这个开关只影响 ggml 大模型库，不会干扰 NCNN 现有的 OpenMP，NCNN 用的是 NDK 自带的 \`libomp\`。
+
+装到本地目录，把 .so 规整出来备用：
+
+\`\`\`bash
+cmake --install . --prefix /c/Users/Blue/Desktop/work/localai/app/src/main/cpp/third_party/llama.cpp/llama-android-install
+\`\`\`
+
+装完在 \`llama-android-install/lib/\` 下能看到 \`libllama.so\`、\`libggml.so\`、\`libggml-base.so\`，新版还会多一个 \`libllama-common.so\`，链接相关坑见第 8 节坑二。
+
+**怎么算成功**：\`cmake --build\` 没报红色错误，最后出现 \`[100%] Built target llama\` 之类；\`llama-android-install/lib/\` 下有 \`libllama.so\` 与 \`libggml.so\`。
+
+**常见出错**：GitHub 克隆被重置就换 SSH 或 ghproxy/kgithub 镜像；报 \`fatal error: 'build-info.h' file not found\` 说明漏关了 \`LLAMA_BUILD_APP/SERVER/UI\` 中的某一个，补上那三个 OFF 开关重来；Ninja 找不到就去掉 \`-G Ninja\` 用默认生成器，慢一点但能编；编译卡很久是正常现象，安卓静态库全量编译较久，耐心等。
+
+---
+
+## 3. 把 llama.cpp 接进工程
+
+**做什么**：把第 2 节编出的 .so 运行库放进项目，并改 CMakeLists 让它参与编译、能被 App 加载。
+
+把这几个 .so 拷到项目的 \`jniLibs/arm64-v8a/\`，和 ncnn/opencv 的 .so 放一起：\`libllama.so\`、\`libggml.so\`、\`libggml-base.so\`；若第 2 节产物里还有 \`libllama-common.so\` 也要拷过来。最终路径形如 \`app/src/main/jniLibs/arm64-v8a/libllama.so\`。
+
+改写 \`app/src/main/cpp/CMakeLists.txt\`，在阶段三的基础上追加 llama 部分，不要动已有的 ncnn/opencv：
+
+\`\`\`cmake
+# llama.cpp 作为子目录编进工程，只编核心库，不会去编 examples/tests
+add_subdirectory(third_party/llama.cpp)
+
+# 在我们的库里追加 llama 头文件
+target_include_directories(\${CMAKE_PROJECT_NAME} PRIVATE
+        third_party/llama.cpp/include)
+
+# 链接：llama 核心库。新版若拆出 libllama-common，必须排在 llama 之后
+target_link_libraries(\${CMAKE_PROJECT_NAME}
+        llama
+        # llama-common   # 仅当你的 llama.cpp 版本拆出了它才加
+        \${NCNN_DIR}/lib/libncnn.a
+        \${OpenCV_LIBS}
+        omp android log)
+\`\`\`
+
+同时确认 CMakeLists 顶部有 \`set(GGML_OPENMP OFF)\`，即关掉大模型库的 OpenMP，以及 \`cmake_minimum_required(VERSION 3.22.1)\` 和 C++17 标准 \`set(CMAKE_CXX_STANDARD 17)\`。
+
+依赖加载顺序要显式排好：\`omp → ggml-base → ggml-cpu → ggml → llama → llama-common → pureedgevlm\`。循环依赖若不按顺序显式加载，会 \`dlopen failed\` 白屏闪退，见第 8 节坑四。
+
+**怎么算成功**：\`jniLibs/arm64-v8a/\` 下有 \`libllama.so\` 与 \`libggml.so\`，新版还有 \`libllama-common.so\`；后面第 7 节点 Run 能编译通过。
+
+**常见出错**：报 \`undefined reference to llama_decode / llama_init_from_model\`，说明你的 llama.cpp 版本把核心 API 拆到了 \`libllama-common.so\`，CMakeLists 链接列表漏了它，把 \`llama-common\` 加进 \`target_link_libraries\` 放在 \`llama\` 之后重编；真机 \`dlopen failed\` 或白屏，多半是 .so 没按上面顺序加载或漏拷了某个 .so，常见漏 \`libggml-base.so\`；\`libomp.so\` 相关报错确认 NCNN 仍在用 NDK 自带 omp 且它也在 jniLibs 里。
+
+---
+
+## 4. 下载 MiniCPM5-1B 的 GGUF
+
+**做什么**：下载那个会说话的大模型文件，放进项目 assets。本阶段模型以总方案为准：MiniCPM5-1B，量化用 Q4_K_M，约 0.5GB，文件名大写。选它是因为 1.08B 参数中文理解更好，且是标准 Llama 架构，llama.cpp 原生支持、无版本门槛。
+
+装 modelscope，国内下载快：
+
+\`\`\`
+pip install modelscope
+\`\`\`
+
+下载模型，放在 \`models_workspace\` 或任意目录：
+
+\`\`\`
+modelscope download --model OpenBMB/MiniCPM5-1B-GGUF MiniCPM5-1B-Q4_K_M.gguf --local_dir ./models/minicpm5
+\`\`\`
+
+> 文件约 500MB，耐心等。下载完在 \`models/minicpm5/\` 里有个 \`MiniCPM5-1B-Q4_K_M.gguf\`。
+
+备选走 HuggingFace：\`https://huggingface.co/openbmb/MiniCPM5-1B-GGUF\`，找同名文件下载。
+
+⚠️ **文件名大小写陷阱**：真实文件名是 \`MiniCPM5-1B-Q4_K_M.gguf\`，M、B 大写。脚本里写成全小写 \`minicpm5-1b-q4_k_m.gguf\` 会直接 404 下载失败。置入 \`assets/models/llm/\` 时也用这个真实大写名，不要改名。
+
+把模型文件放进项目：\`app/src/main/assets/models/llm/MiniCPM5-1B-Q4_K_M.gguf\`。在 \`app/build.gradle\` 里加这条，让模型不压缩直接打进安装包：
+
+\`\`\`groovy
+android {
+    aaptOptions { noCompress "gguf" }
+}
+\`\`\`
+
+压缩了又解压既占空间又慢。安装包会到约 1.1GB，主要是这个小模型，手机存储够就行。
+
+**怎么算成功**：\`assets/models/llm/\` 下有且仅有这一个 \`.gguf\` 文件，名字是 \`MiniCPM5-1B-Q4_K_M.gguf\`。
+
+**常见出错**：下载 404 先确认文件名大小写；下载慢或中断，modelscope 支持断点续传，重跑同样命令继续，或换 HuggingFace；下成了 Q2_K 或 Q8 不行，Q2_K 会乱码、Q8 体积过大手机内存不足，必须 Q4_K_M；实在下不到可退而求其次用 \`Qwen3-0.6B\` 的 GGUF，更小更快但能力弱，但优先坚持 MiniCPM5-1B，总方案定的。
+
+---
+
+## 5. 写推理代码与 JNI 桥
+
+**做什么**：让 C++ 的大模型推理函数和 Kotlin 界面连起来，每生成一个字就实时回传显示。代码已写好放在项目里，你不需要自己写，这里只讲清楚动了哪些文件、万一报错去哪看。
+
+本阶段改动清单：
+
+1. \`app/src/main/cpp/llm_engine.h\`，LlmEngine 类的头文件，声明加载、生成、释放等接口。
+2. \`app/src/main/cpp/llm_engine.cpp\`，大模型推理主体，核心逻辑：
+   - **加载**：从手机内部存储 mmap 加载 GGUF，首次启动把 assets 里的模型拷过去再加载，缓存不重复拷。
+   - **生成**：把中文提示词经 \`llama_tokenize\` 分词，逐 token 经 \`llama_decode\` 解码，取词表概率最高的字用 \`llama_get_logits_ith\`，把 token 变回文字用 \`llama_token_to_piece\`。
+   - **结束判断**：遇到结束符 \`llama_is_eog_token\` 就停。
+   - **退化保护**：连续重复 8 个以上 token 强制 break，防大模型陷入空转。
+   - **线程安全**：用 \`std::mutex\` 把推理入口串行化，避免连点导致并发崩。
+   - **清缓存**：每次生成完清理 KV cache，避免累积 OOM。
+3. 调用 llama.cpp 稳定 C API 的顺序：
+
+   \`\`\`
+   llama_model_load_from_file   → 加载模型
+   llama_init_from_model       → 建推理上下文
+   llama_tokenize             → 提示词分词
+   llama_batch_init / llama_decode → 喂词、解码
+   llama_get_logits_ith      → 取下一个字的分布
+   llama_token_to_piece      → token 变回文字，即 UTF-8 中文
+   llama_is_eog_token        → 是不是结束符
+   \`\`\`
+
+4. **flash_attn 改成枚举**，这是新版 llama.cpp 的坑：旧写法 \`cparams.flash_attn = false\` 编译报错，要改成 \`cparams.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED\`，见第 8 节坑三。
+
+C++ 和 Kotlin 之间的桥，让 Kotlin 点一下就能调到上面的 C++ 大模型函数，并且每生成一个字就实时回传给界面。需要改或写这几个文件：
+
+- \`app/src/main/cpp/native_bridge.cpp\`，加两个对外函数，函数名里的 \`com_topaz_pureedgevlm\` 必须和包名一致：
+
+  \`\`\`cpp
+  extern "C" JNIEXPORT jboolean JNICALL
+  Java_com_topaz_pureedgevlm_NativeBridge_llmLoad(JNIEnv*, jobject);
+
+  extern "C" JNIEXPORT void JNICALL
+  Java_com_topaz_pureedgevlm_NativeBridge_llmGenerate(
+      JNIEnv* env, jobject, jstring prompt, jint maxTokens, jobject callback);
+  \`\`\`
+
+  \`llmLoad\` 加载大模型，内部把 assets 的 GGUF 拷到内部存储再 \`LlmEngine::load\`；\`llmGenerate\` 调 \`LlmEngine::generate\`，每出一个 token 用 \`env->CallVoidMethod\` 回调 Kotlin 的 \`onToken(String)\` 方法。
+
+- \`app/src/main/java/com/topaz/pureedgevlm/NativeBridge.kt\`，加对应声明：
+
+  \`\`\`kotlin
+  external fun llmLoad(): Boolean
+  external fun llmGenerate(prompt: String, maxTokens: Int, callback: LlmCallback)
+  // 首次用时把 assets/models/llm/*.gguf 拷到内部存储再 load，缓存且不重复拷
+  \`\`\`
+
+  回调接口 \`LlmCallback\` 是 Kotlin 的 \`interface\` 内部类，C++ 侧用 \`GetObjectClass(callback)\` 从实例拿类，别写死类名，否则点按钮闪退，见第 8 节坑五。
+
+**怎么算成功**：你能在这几个路径下看到对应文件，且 \`llm_engine.cpp\` 里有 \`llama_model_load_from_file\`、\`llama_token_to_piece\` 字样，说明接好了。如果编译报错，先看第 3 节的 .so 是否就位、CMakeLists 链接对不对，大概率是库没接好，不是代码写错。不用改任何代码。
+
+---
+
+## 6. 写聊天界面、多轮历史与绑核调度
+
+**做什么**：在界面上加一个本地对话区，让用户输入文字、点发送，大模型流式回中文，可连续多轮聊；同时做 MatPool 内存复用和绑核调度两个稳定性优化。
+
+需要改 \`MainActivity.kt\`：
+
+- 界面元素：\`EditText\` 输入框、\`Button\` 发送、\`Button\` 清空、\`ScrollView\` 加 \`LinearLayout\` 对话气泡区。
+- \`sendMessage()\` 逻辑：读出输入框文字，清空输入框，把这句话作为用户轮加入 \`history\` 多轮历史，立刻显示一个靠右蓝泡；在对话区加一个靠左灰泡准备接收 AI 回复；用 MiniCPM5 的 ChatML 模板把 \`history\` 拼成完整多轮对话：
+
+  > \`<|im_start|>system\\n你是一个运行在手机上的本地智能助手…<|im_end|>\\n<|im_start|>user\\n用户第1句<|im_end|>\\n<|im_start|>assistant\\nAI第1句<|im_end|>\\n…<|im_start|>user\\n用户当前这句<|im_end|>\\n<|im_start|>assistant\\n\`
+
+  句尾留 \`<|im_start|>assistant\\n\` 不带 \`<|im_end|>\`，表示让模型接着生成。调 \`llmGenerate(这条完整对话, 256, callback)\`，callback 每回一个字就追加到那个灰泡；生成结束把 AI 回复作为助手轮加入 \`history\`，下一轮才能记得上文。
+
+- **关键：必须走 MiniCPM5 的 ChatML 对话模板**。MiniCPM5-1B 是标准 ChatML 对话模型，GGUF 自带 chat_template 且需要句首 BOS。直接丢一句裸指令，模型会把它当训练语料吐废话，不会正常对话。C++ 侧 \`LlmEngine::generate\` 已经负责补 BOS、并把 \`<|im_start|>/<|im_end|>\` 识别成真正的特殊词元，即 \`parse_special=true\`，所以只要把拼好的完整 ChatML 对话传进去即可。
+
+  多轮上下文靠每轮把完整 ChatML 对话重新拼好、从头预填充来实现，绝不依赖跨轮 KV 前缀复用，踩坑经过见第 8 节坑九。代价是每轮多算几百毫秒，但物理上不可能接错话或忘记前文，最稳定。
+
+- 用后台 \`Thread\` 把推理丢到子线程，结果通过 \`runOnUiThread\` 回主线程显示，界面不卡；生成期间用 \`isBusy\` 禁用发送、清空、选择图片防连点。
+
+MatPool 内存复用与绑核调度，让连点多张图也不崩、内存不暴涨：
+
+- **MatPool 内存复用**：视觉三模型串行执行，同一时刻只活 1 个，预分配一组 \`ncnn::Mat\` 输入与输出缓冲，模型类不持有所有权、用借的方式取用，跑完归还。避免每帧 \`new Mat\` 导致内存峰值叠加。
+- **绑核调度，基于骁龙 865 三丛集**：视觉阶段 YOLO 到场景到 OCR 串行，\`omp_set_num_threads(4)\` 加 \`ncnn::set_cpu_powersave(2)\` 绑大核组跑；大模型解码阶段 \`omp_set_num_threads(1)\` 单线程，加 \`sched_setaffinity_np\` 绑 Prime 核，即 CPU0 最快的大核。LLM 解码是访存密集，每生成一个字都要把全部权重读一遍，多线程反而因缓存未命中变慢，实验证明 1 线程比 4 线程快，所以大模型阶段单线程并绑最快的 Prime 核。L3 cache 仅 3MB，模型并行会互相驱逐缓存，实测串行更快。
+- **\`nativeRelease()\` 清理**：提供释放模型与上下文的接口，退出或切页时调用，避免资源泄漏。
+
+**怎么算成功**：装到手机，在输入框打字点发送，几秒内灰泡开始逐字冒出中文回复；再问一句模型能接住上文、多轮连贯；点清空对话区与历史一起清空可重新开始；连点或连测 3 到 5 张不同图都不崩、内存增量小。
+
+**常见出错**：回复文不对题或像在念训练语料，多半是 ChatML 没拼对，缺 \`<|im_start|>\` 角色标记或没补 BOS，检查 \`buildChatPrompt\` 的拼装格式，或看 Logcat tag=LLM 里的 \`prompt:\` 是否带了 \`<|im_start|>\`；界面卡死确认大模型推理在后台线程、没占主线程；发了没反应看 Logcat，八成是 \`llmLoad\` 没成功加载模型，GGUF 路径或文件名大小写不对，或 JNI 函数名和包名对不上；绑核失败 \`set_cpu_powersave\` 在某些 ROM 受 SELinux 限制，降级用 \`sched_setaffinity_np\`，若仍受限先不绑核跑通功能、性能后续再调；跑多次后越来越慢是 CPU 降频即热节流，连测时加 \`Thread.sleep(100)\` 间隔。
+
+---
+
+## 7. 编译装机与验收
+
+**做什么**：把加了本地对话功能的 App 编译出来，装到手机上，在输入框打字点发送看多轮对话效果。
+
+打开 Android Studio，打开这个项目，路径是 \`C:\\Users\\Blue\\Desktop\\work\\localai\`，连上手机，USB 调试已在阶段一配好，点工具栏的 Run 或 Shift+F10 选你的手机。第一次编译会慢，要连带编译 llama.cpp，可能 5 到 15 分钟，耐心等。编译完自动装到手机并启动，在底部输入框打字点发送开始对话，顶部选择图片仍可单独跑视觉三模型。抓日志验证：Android Studio 里开 Logcat，过滤 tag 填 \`LLM\`，重点看有没有 \`tokenize ok\` 和 \`generate done\` 这两行，以及界面有没有出中文回复、有没有崩溃。
+
+装到手机，在输入框打字点发送，应该看到：
+
+- Android Studio 底部 Build Output 显示 \`BUILD SUCCESSFUL\`，手机上 App 自动打开，不闪退；
+- 点发送后灰泡逐字冒出通顺中文回复，非乱码、非空、不是 \`<|im_end|>\`；
+- 再问一句模型能接住上文，多轮连贯；点清空对话气泡区与历史一起清空可重新开始；
+- Logcat 过滤 \`LLM\` 有 \`tokenize ok\` 加 \`generate done\`，无 SIGSEGV 或异常崩溃；
+- 大模型流式输出约 50 到 66ms/token，即 15 到 20 tok/s，骁龙 865 目标，单轮回复小于 15 秒、256 token 上限；
+- UI 不卡顿，推理在后台线程，主线程只负责显示；连续多发几轮不崩，互斥锁防并发，多次对话后内存增量小于 50MB。
+
+**常见出错**：编译报错说 llama 某个函数找不到，是 llama.cpp 版本差异，对照 \`third_party/llama.cpp/include/llama.h\` 微调代码；白屏或闪退多半是 .so 没按依赖顺序加载，见第 3 节，或 GGUF 没加载成功，看 Logcat 过滤 \`LLM\`；手机不识别是阶段一的 USB 调试或驱动问题，回去查。
+
+---
+
+## 8. 踩过的坑
+
+阶段四大模型安卓集成的通用踩坑点，按发生顺序记录，供后续参考。换任何版本或项目都大概率遇到。
+
+1. **漏关 APP/SERVER/UI 致编译失败**。只关了 examples/tests/tools 不够，编译报 \`fatal error: 'build-info.h' file not found\`。根因是漏关的 APP/SERVER/UI 需要 \`build-info.h\` 与 \`arg.h\` 而它们没生成。正确做法：CMake 里补 \`-DLLAMA_BUILD_APP=OFF -DLLAMA_BUILD_SERVER=OFF -DLLAMA_BUILD_UI=OFF\`，见第 2 节。
+
+2. **新版 llama.cpp 拆出 libllama-common.so，链接报 undefined reference**。编译报 \`undefined reference to llama_decode\` 或 \`llama_init_from_model\`。根因是新版把核心 API 从 \`libllama.so\` 拆到第 5 个库 \`libllama-common.so\`，CMakeLists 链接列表漏了它。正确做法：把 \`libllama-common.so\` 也拷到 jniLibs，并在 \`target_link_libraries\` 里排在 \`llama\` 之后加上它，见第 3 节。
+
+3. **flash_attn 改枚举**。\`cparams.flash_attn = false\` 编译报错。根因是新版把 \`flash_attn\` 布尔字段改成了枚举 \`flash_attn_type\`。正确做法：改成 \`cparams.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_DISABLED\`，见第 5 节。
+
+4. **多个 .so 循环依赖加一次性读大文件，白屏闪退**。\`libllama\` 与 \`libllama-common\` 互相依赖，靠系统自动加载会 \`dlopen failed\`；原拷贝逻辑把 0.5GB gguf 一次性读进内存会 \`std::bad_alloc\`。正确做法：按依赖顺序显式加载 \`omp → ggml-base → ggml-cpu → ggml → llama → llama-common → pureedgevlm\`；GGUF 拷贝改 1MB 分块流式，见第 3 节。
+
+5. **Kotlin 内部接口 FindClass 名错，点按钮闪退**。\`object NativeBridge\` 内部接口编译真名是 \`NativeBridge$LlmCallback\`，带 \`$\`，C++ 写死 \`LlmCallback\` 找不到类，导致 \`GetMethodID(NULL)\` 崩 VM。正确做法：C++ 用 \`GetObjectClass(callback)\` 从实例拿类，别写死类名，见第 5 节。
+
+6. **llama_get_logits_ith 越界，生成循环崩**。\`i\` 是上一批词元内索引，整批提示词取 \`nPrompt-1\`、单 token 取 \`0\`，写死 0 或累加绝对位置 \`nPast-1\` 都越界抛异常、跨 JNI 崩进程。正确做法：用 \`logitsIdx\` 变量区分两阶段，别写死。
+
+7. **llama_batch_get_one 创建的 batch 绝不可 llama_batch_free，头号坑**。\`get_one\` 把调用方指针直接存进 \`batch.token\`，不 malloc，free 会 free 栈或野指针，导致安卓 MTE \`Pointer tag truncated\` SIGABRT。正确做法：删掉 \`llama_batch_free\`，用 \`get_one\` 就别 free，栈结构体自动消亡；要 free 须改用 \`llama_batch_init(n,0,1)\` 分配。
+
+8. **中文乱码或 KV cache 累积 OOM**。输出 \`\\xe4\\xbd\\xa0\` 这种乱码，或跑几轮后崩。根因是用了 \`llama_vocab\` 而非 \`llama_token_to_piece\`，UTF-8 多字节没正确转，或每次生成后没清 KV cache 导致累积。正确做法：用 \`llama_token_to_piece\` 取文字，每次生成完清理 KV cache，避免累积 OOM，见第 5 节。
+
+9. **多轮对话靠跨轮 KV 缓存复用来会接错话，实战踩坑**。为了让多轮更快，给对话加 KV 缓存复用，只补算新加句、复用上轮 KV，结果连环翻车：第二轮直接 \`prompt decode failed\`、答非所问、Activity 旋转或切页后忘记前文、历史截断裁错导致前缀不符、上下文重建慢到 17 秒。根因是 KV 复用依赖跨轮 prompt 前缀一字不差地连续，一旦历史被截断、清空或预算算错，前缀对不上，接错话或超慢重建，打几道补丁都只是治标。正确做法，本方案采用：多轮上下文靠每轮把完整 ChatML 对话重新拼好、从头预填充来实现，绝不依赖跨轮 KV 前缀复用。代价是每轮多算几百毫秒，但物理上不可能接错话或忘记前文，最稳定。教训：端侧小模型多轮对话，别用猜预算裁剪加 KV 前缀复用这种不可靠的优化，要么无状态保正确，要么做安全前缀复用。
+
+---
+
+## 9. 写在最后
+
+到这，阶段四全部完成：llama.cpp 编译进 App 了、MiniCPM5-1B 的 GGUF 放进 assets 了、LlmEngine 推理引擎和 JNI 桥在骁龙 865 上跑通、聊天界面能流式出中文、多轮连贯、连点不崩。
+
+这一阶段最花时间的，一半是 llama.cpp 全量编译等待，第一次可能 10 到 20 分钟，一半是那堆大模型安卓集成的坑，尤其是 libllama-common 拆库导致的 undefined reference、循环依赖白屏、以及为了快而做 KV 复用反而接错话这几处。做完回头看，核心逻辑并不复杂，难点在于每一处新版 llama.cpp 的接口变动都要对照头文件确认，不能凭旧写法。
+
+项目地址：https://github.com/Topaz059/PureEdgeVLM
+
+*本文写于 2026-07-26，记录 PureEdgeVLM 端侧多模态系统阶段四的搭建过程。*
+`;
 export const essays: Essay[] = [
   { id: 2, date: '2026-07-03', title: '滤波器与 PID 是一对', content: '控制课上讲 PID 整定，突然反应过来：滤波器和 PID 其实是一对，前者收拾信号，后者收拾误差。机器视觉里这俩谁也躲不掉，算是把专业课串起来了。', tags: ['控制工程', '学习'] },
   { id: 3, date: '2026-06-22', title: '最小可运行 Agent 跑通了', content: '跟着教程搭了个最小可运行的 Agent，工具调用跑通的那一刻有点上头。下一步想接 MediaPipe，让它真的"看得见"——这才对得起"机器视觉"这个方向。', tags: ['AI Agent', 'MediaPipe'] },
@@ -987,6 +1293,14 @@ export const essays: Essay[] = [
     title: 'PureEdgeVLM 阶段三搭建记录',
     content: '阶段三在阶段二跑通 YOLO 检测与 ResNet50 场景识别的基础上，接进百度 PP-OCRv5 文字识别，让手机选一张带字的图就能把图里的字读出来。',
     markdown: PUREEDGE_VLM_STAGE3_MD,
+    tags: ['端侧AI', '学习笔记', '搭建记录'],
+  },
+  {
+    id: 14,
+    date: '2026-07-26',
+    title: 'PureEdgeVLM 阶段四搭建记录',
+    content: '阶段四把 llama.cpp 的大模型运行库编进工程，在 App 里用 MiniCPM5 做纯文字多轮对话，并做 MatPool 内存复用与绑核调度两个稳定性优化。',
+    markdown: PUREEDGE_VLM_STAGE4_MD,
     tags: ['端侧AI', '学习笔记', '搭建记录'],
   },
 ];
