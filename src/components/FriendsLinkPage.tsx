@@ -155,7 +155,7 @@ export default function FriendsLinkPage() {
         className="w-full text-center py-3 text-gray-400 flex-shrink-0"
         style={{ fontSize: 'clamp(10px, 1.4cqw, 12px)' }}
       >
-        © 2026 Topaz · 我的互联网朋友们
+        © 2026 Munan · 我的互联网朋友们
       </div>
     </div>
   );

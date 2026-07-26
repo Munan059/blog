@@ -1,6 +1,6 @@
 # 从零搭建我的个人“数字桌面”博客
 
-> 项目代号：**topaz-desktop** · 技术栈：Next.js 14（App Router）+ TypeScript + Tailwind CSS + framer-motion
+> 项目代号：**munan-desktop** · 技术栈：Next.js 14（App Router）+ TypeScript + Tailwind CSS + framer-motion
 >
 > 一句话概括：把个人网站做成一个可以点图标、开窗口的桌面操作系统，而非传统博客。
 
@@ -44,8 +44,8 @@
 用官方脚手架起一个新项目，关掉所有花哨的默认配置（我不需要 ESLint 严格模式、不需要默认的示例页）：
 
 ```bash
-npx create-next-app@14 topaz-desktop --ts --tailwind --app --no-src-dir --no-eslint
-cd topaz-desktop
+npx create-next-app@14 munan-desktop --ts --tailwind --app --no-src-dir --no-eslint
+cd munan-desktop
 ```
 
 但这里有个**关键决定**：我把源码放进了 `src/` 目录（脚手架默认是根目录散着），并开启了 `src/app` 结构。接着装动画与渲染依赖：
@@ -102,7 +102,7 @@ export default nextConfig;
 ## 4. 目录结构一览
 
 ```
-topaz-desktop/
+munan-desktop/
 ├─ next.config.mjs        # 静态导出配置
 ├─ tailwind.config.ts     # 主题色 / 字体 / 动画
 ├─ postcss.config.mjs
@@ -281,7 +281,7 @@ colors: {
 - 实际线上引用的是 **GitHub Releases 上的下载直链**：
 
 ```tsx
-<source src="https://github.com/Topaz059/blog/releases/download/v1.0.0/bizhi.mp4" type="video/mp4" />
+<source src="https://github.com/Munan059/blog/releases/download/v1.0.0/bizhi.mp4" type="video/mp4" />
 ```
 
 > 这样既省了仓库体积，又不用单独买对象存储。Release 下载有带宽限制，但对个人博客完全够用。
@@ -328,8 +328,8 @@ npm run build     # 产出 out/ 静态文件
 
 从 `create-next-app` 到第一个能拖动的窗口弹出来，核心逻辑其实不到 500 行。真正花时间的，是把桌面这个比喻做顺：窗口层级、拖动手感、任务栏状态同步、深链跳转……每一个都是小坑，但凑齐了就有那个“哇，这是个系统”的沉浸感。
 
-如果你也在做个人站，欢迎参考我的搭建过程。源码在 GitHub：[Topaz059/blog](https://github.com/Topaz059/blog)。
+如果你也在做个人站，欢迎参考我的搭建过程。源码在 GitHub：[Munan059/blog](https://github.com/Munan059/blog)。
 
 ---
 
-*本文写于 2026-07-13，记录 topaz-desktop 博客从 0 到 1 的搭建过程。*
+*本文写于 2026-07-13，记录 munan-desktop 博客从 0 到 1 的搭建过程。*

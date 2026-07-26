@@ -1,4 +1,4 @@
-/* 文章数据 — Topaz 人设，扩充覆盖 2026 年 2-7 月 + 2025 年 */
+/* 文章数据 — Munan 人设，扩充覆盖 2026 年 2-7 月 + 2025 年 */
 import { ARTICLES_MARKDOWN } from './articlesContent';
 
 export type Article = {

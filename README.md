@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🖥️ Topaz Blog · 数字桌面
+# 🖥️ Munan Blog · 数字桌面
 
 **一句话定位：把个人博客做成 Windows 11 风格的可交互桌面，点图标开窗口、拖窗口，任务栏搜索直接深链到某篇随笔/文章；全程零服务端，一条 `npm run build` 产出纯静态站，连上 Cloudflare Pages 即上线。**
 
@@ -11,7 +11,7 @@
 ![Cloudflare Pages](https://img.shields.io/badge/Deploy-Cloudflare_Pages-F38020?logo=cloudflarepages&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow)
 
-🌐 在线预览：https://blog-topaz.pages.dev
+🌐 在线预览：https://munan.ink
 
 [这是什么](#-这是什么) · [功能亮点](#-功能亮点) · [架构](#-架构设计) · [快速开始](#-快速开始) · [内容管理](#-内容管理) · [部署](#-部署) · [许可证](#-许可证)
 
@@ -21,7 +21,7 @@
 
 ## 📖 这是什么
 
-Topaz Blog 是一个能在浏览器里当操作系统用的个人网站：桌面上有图标，点一下弹出窗口；窗口能拖动、最小化、最大化、关闭；顶部菜单栏、底部任务栏、开始菜单都跟窗口状态联动。每个窗口是一个独立模块（文章、随笔、项目、关于、友链……），互不干扰。
+Munan Blog 是一个能在浏览器里当操作系统用的个人网站：桌面上有图标，点一下弹出窗口；窗口能拖动、最小化、最大化、关闭；顶部菜单栏、底部任务栏、开始菜单都跟窗口状态联动。每个窗口是一个独立模块（文章、随笔、项目、关于、友链……），互不干扰。
 
 > **为什么值得一看**：它长得像桌面系统、交互也像，但本质是 `output: 'export'` 产出的纯静态站，没有服务器、没有数据库、没有 API，却把窗口管理、拖拽、搜索深链全做出来了。克隆下来 `npm run build` 就能原样跑在任何静态托管上。
 
@@ -83,7 +83,7 @@ Topaz Blog 是一个能在浏览器里当操作系统用的个人网站：桌面
 
 ```bash
 # 1. 克隆仓库
-git clone https://github.com/Topaz059/blog.git
+git clone https://github.com/Munan059/blog.git
 cd blog
 ```
 
@@ -115,7 +115,7 @@ npm run build
 ## 📂 目录结构
 
 ```
-topaz-desktop/
+munan-desktop/
 ├─ next.config.mjs          # 静态导出配置（output:'export'）
 ├─ tailwind.config.ts       # 主题色 / 字体 / 动画 keyframes
 ├─ postcss.config.mjs
@@ -190,7 +190,7 @@ topaz-desktop/
 <summary>☁️ 方式一：Cloudflare Pages 连接 GitHub 自动部署（推荐）</summary>
 
 1. 登录 Cloudflare 控制台 → **Workers & Pages** → **Create** → **Pages** → **连接到 Git**。
-2. 选择仓库 `Topaz059/blog`，分支 `main`。
+2. 选择仓库 `Munan059/blog`，分支 `main`。
 3. 构建设置：
    - **构建命令（Build command）**：`npm run build`
    - **构建输出目录（Build output directory）**：`out`

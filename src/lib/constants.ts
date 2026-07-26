@@ -19,7 +19,7 @@ export const leftIcons: DesktopIconData[] = [
 ];
 
 export const rightIcons: DesktopIconData[] = [
-  { id: 'why', label: 'GitHub', column: 'right', href: 'https://github.com/Topaz059', isExternal: true },
+  { id: 'why', label: 'GitHub', column: 'right', href: 'https://github.com/Munan059', isExternal: true },
   { id: 'changelog', label: 'Bilibili', column: 'right', href: 'https://space.bilibili.com/50003864?spm_id_from=333.1007.0.0', isExternal: true },
   { id: 'xiaohongshu', label: '小红书', column: 'right', href: 'https://www.xiaohongshu.com/user/profile/61b56159000000001000645e', isExternal: true },
 ];

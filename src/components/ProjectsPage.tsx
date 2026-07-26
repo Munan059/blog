@@ -269,7 +269,7 @@ export default function ProjectsPage() {
               className="w-full text-center py-3 text-gray-400 flex-shrink-0"
               style={{ fontSize: 'clamp(10px, 1.4cqw, 12px)' }}
             >
-              © 2026 Topaz · 我做过的事和一些比赛经历
+              © 2026 Munan · 我做过的事和一些比赛经历
             </div>
           </motion.div>
         )}

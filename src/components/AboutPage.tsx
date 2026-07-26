@@ -114,7 +114,7 @@ export default function AboutPage() {
           className="font-semibold text-gray-800 mt-6"
           style={{ fontSize: 'clamp(24px, 4cqw, 32px)' }}
         >
-          Topaz
+          Munan
         </h1>
 
         {/* 分隔线 */}
@@ -205,7 +205,7 @@ export default function AboutPage() {
         className="w-full text-center py-3 text-gray-400 flex-shrink-0"
         style={{ fontSize: 'clamp(10px, 1.4cqw, 12px)' }}
       >
-        © 2026 Topaz · 欢迎来到我的数字桌面
+        © 2026 Munan · 欢迎来到我的数字桌面
       </div>
     </div>
   );

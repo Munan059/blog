@@ -131,7 +131,7 @@ is_student = True   # bool，布尔型
 ### 1.3 练习回顾
 - 声明标识符 \`my_name\` 并绑定字符串值：
   \`\`\`python
-  my_name = "topaz"
+  my_name = "munan"
   \`\`\`
 - 声明标识符 \`study_hours\` 并绑定整型值：
   \`\`\`python
@@ -512,7 +512,7 @@ assets/models/
 5. **误装 paddlepaddle + 错误镜像**：想用 paddle 验证 OCR，镜像路径早废了装不上；更关键，PP-OCRv5 是 NCNN 版，电脑跑根本不需要百度飞桨框架。已卸载误装的包。教训：先想清楚技术路线再装依赖。
 6. **Git 删文件还在历史里**：文档从仓库删除并提交，旧提交仍能翻到全文。要彻底消失得重写历史。私人文档从第一天就进 \`.gitignore\`。
 7. **cmd 命令行直接敲 Python 代码**：在 \`C:\\>\` 下输入 \`import torch\` 全报"不是内部或外部命令"。命令行窗口只认 Windows 命令，Python 代码要写进 \`.py\` 文件用 \`py -3.10 xxx.py\` 跑，或先 \`py -3.10\` 进交互模式。
-8. **包名大小写改名失败**：默认包名 \`com.Topaz...\` 想改成小写，Windows 不区分大小写导致改名不生效。用两步改名法：先改成 \`topaztmp\` 再改成 \`topaz\`。
+8. **包名大小写改名失败**：默认包名 \`com.Munan...\` 想改成小写，Windows 不区分大小写导致改名不生效。用两步改名法：先改成 \`munantmp\` 再改成 \`munan\`。
 9. **INSTALL_FAILED_TEST_ONLY**：点 Run 装 App 报这个，因为调试包带了测试标记，真我 / OPPO / vivo 会拒装。在 \`gradle.properties\` 加 \`android.injected.testOnly=false\` 重装即可。
 10. **项目路径含空格警告**：保存路径有空格时 NDK 工具会出问题，路径改成不含空格。
 
@@ -540,7 +540,7 @@ assets/models/
 
 这一阶段最花时间的不是技术，而是把环境弄对、把模型来源理顺、把一路踩的坑填平。做完回头看，核心逻辑不复杂，难的是"每一步都别想当然"。
 
-项目地址：https://github.com/Topaz059/PureEdgeVLM
+项目地址：https://github.com/Munan059/PureEdgeVLM
 
 *本文写于 2026-07-19，记录 PureEdgeVLM 端侧多模态系统阶段一的搭建过程。*
 `;
@@ -584,9 +584,9 @@ export const PUREEDGE_VLM_STAGE2_MD = `# PureEdgeVLM 阶段二搭建记录
 | \`app/src/main/cpp/scene_classifier.h\` / \`scene_classifier.cpp\` | 场景识别器：加载模型、归一化、softmax、取 Top5 |
 | \`app/src/main/cpp/native_bridge.cpp\` | C++ 与 Kotlin 的桥：加载模型 + 两个对外接口 |
 | \`app/src/main/cpp/CMakeLists.txt\` | 把 NCNN 静态库 + OpenMP 链进 App |
-| \`app/src/main/java/com/topaz/pureedgevlm/NativeBridge.kt\` | Kotlin 侧的桥：声明 external 函数、类别名、读场景标签 |
-| \`app/src/main/java/com/topaz/pureedgevlm/YoloBox.kt\` / \`SceneResult.kt\` | 检测结果的数据类 |
-| \`app/src/main/java/com/topaz/pureedgevlm/MainActivity.kt\` | 临时界面：点按钮选图，显示检测框 + 场景名 |
+| \`app/src/main/java/com/munan/pureedgevlm/NativeBridge.kt\` | Kotlin 侧的桥：声明 external 函数、类别名、读场景标签 |
+| \`app/src/main/java/com/munan/pureedgevlm/YoloBox.kt\` / \`SceneResult.kt\` | 检测结果的数据类 |
+| \`app/src/main/java/com/munan/pureedgevlm/MainActivity.kt\` | 临时界面：点按钮选图，显示检测框 + 场景名 |
 
 这套临时界面只为验证阶段二。后面阶段五会做正式的相机页和聊天页，到时这套会被替换或整合。
 
@@ -698,12 +698,12 @@ std::vector<SceneTop> classify(JNIEnv*, jobject bitmap, int topk = 5);
 
 ## 6. 写 JNI 桥 + Kotlin 临时界面
 
-**C++ 桥** \`native_bridge.cpp\` 里有三个对外函数（函数名里的 \`com_topaz_pureedgevlm\` 必须和包名一致）：
+**C++ 桥** \`native_bridge.cpp\` 里有三个对外函数（函数名里的 \`com_munan_pureedgevlm\` 必须和包名一致）：
 
 \`\`\`cpp
-Java_com_topaz_pureedgevlm_NativeBridge_nativeInit(JNIEnv*, jclass, jobject assetManager);
-Java_com_topaz_pureedgevlm_NativeBridge_yoloDetect(JNIEnv*, jclass, jobject bitmap, jfloat conf, jfloat nms);
-Java_com_topaz_pureedgevlm_NativeBridge_sceneRecognize(JNIEnv*, jclass, jobject bitmap);
+Java_com_munan_pureedgevlm_NativeBridge_nativeInit(JNIEnv*, jclass, jobject assetManager);
+Java_com_munan_pureedgevlm_NativeBridge_yoloDetect(JNIEnv*, jclass, jobject bitmap, jfloat conf, jfloat nms);
+Java_com_munan_pureedgevlm_NativeBridge_sceneRecognize(JNIEnv*, jclass, jobject bitmap);
 \`\`\`
 
 - \`nativeInit\`：拿到 AssetManager，从 \`assets/models/yolo/model.ncnn.*\` 和 \`assets/models/scene/resnet50_fp32.*\` 把模型读进内存、加载好，并记一条初始化日志（\`g_init_debug\`）。
@@ -755,7 +755,7 @@ Java_com_topaz_pureedgevlm_NativeBridge_sceneRecognize(JNIEnv*, jclass, jobject 
 
 接下来是阶段三：把 PP-OCRv5 文字识别接进来，并把 llama.cpp 的大模型运行库编进工程，让手机上能跑通 OCR 和 MiniCPM5 生成文字。
 
-项目地址：https://github.com/Topaz059/PureEdgeVLM
+项目地址：https://github.com/Munan059/PureEdgeVLM
 
 *本文写于 2026-07-21，记录 PureEdgeVLM 端侧多模态系统阶段二的搭建过程。*
 `;
@@ -792,8 +792,8 @@ export const PUREEDGE_VLM_STAGE3_MD = `# PureEdgeVLM 阶段三搭建记录
 | \`app/src/main/assets/models/ocr/\` | 4 个 OCR 模型文件，det 与 rec 各一份 param 和 bin，fp16 版 |
 | \`app/src/main/cpp/native_bridge.cpp\` | 加 OCR 引擎全局变量，nativeInit 里加载 OCR，新增 ocrRecognize 接口 |
 | \`app/src/main/cpp/CMakeLists.txt\` | 加 OpenCV 查找与链接，把 ocr/ppocrv5.cpp 和 opencv_omp_shim.cpp 加进编译 |
-| \`app/src/main/java/com/topaz/pureedgevlm/NativeBridge.kt\` | 加 ocrRecognize 桥接口声明 |
-| \`app/src/main/java/com/topaz/pureedgevlm/MainActivity.kt\` | 选图后统一转 ARGB_8888，调用 ocrRecognize，结果拼到界面下方 |
+| \`app/src/main/java/com/munan/pureedgevlm/NativeBridge.kt\` | 加 ocrRecognize 桥接口声明 |
+| \`app/src/main/java/com/munan/pureedgevlm/MainActivity.kt\` | 选图后统一转 ARGB_8888，调用 ocrRecognize，结果拼到界面下方 |
 
 对应提交 \`b8badbe\`：阶段三 PP-OCRv5 OCR 集成，含 OpenMP deinit 空实现修复，2026-07-20。
 
@@ -912,7 +912,7 @@ Android Studio 里点 Run，第一次编译要链接 NCNN 静态库与 OpenCV，
 
 接下来是阶段四：把 llama.cpp 的大模型运行库编进工程，在 App 里用 MiniCPM5 做纯文字多轮对话，并做绑核调度优化性能。
 
-项目地址：https://github.com/Topaz059/PureEdgeVLM
+项目地址：https://github.com/Munan059/PureEdgeVLM
 
 *本文写于 2026-07-24，记录 PureEdgeVLM 阶段三的搭建过程。*
 `;

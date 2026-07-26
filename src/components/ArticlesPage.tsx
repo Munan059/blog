@@ -369,7 +369,7 @@ export default function ArticlesPage({ focusArticleId, onFocusConsumed }: Articl
               className="w-full text-center py-3 text-gray-400 flex-shrink-0"
               style={{ fontSize: 'clamp(10px, 1.4cqw, 12px)' }}
             >
-              © 2026 Topaz · 分享一些心得和感悟
+              © 2026 Munan · 分享一些心得和感悟
             </div>
           </motion.div>
         )}

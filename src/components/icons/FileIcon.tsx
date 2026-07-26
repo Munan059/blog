@@ -187,8 +187,8 @@ export const GitHubIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-// Topaz Logo - hedgehog
-export const TopazLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+// Munan Logo - hedgehog
+export const MunanLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" {...props}>
     <ellipse cx="12" cy="14" rx="8" ry="7" fill="white" />
     <circle cx="9" cy="11" r="1.5" fill="#1a1a1a" />

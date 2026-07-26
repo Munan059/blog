@@ -36,7 +36,7 @@ export default function CenterIllustration() {
 
           <rect width="900" height="500" fill="url(#skyGrad)" rx="12" />
 
-          {/* Isometric blocks forming TOPAZ */}
+          {/* Isometric blocks forming MUNAN */}
           {isometricBlocks.map((block, i) => (
             <g key={i} filter="url(#pixelShadow)">
               {/* Top face */}

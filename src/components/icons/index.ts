@@ -17,7 +17,7 @@ export {
   SwitchModeIcon,
   ProductOSIcon,
   GitHubIcon,
-  TopazLogo,
+  MunanLogo,
   ArticleIcon,
   DriveIcon,
   OpticalDriveIcon,

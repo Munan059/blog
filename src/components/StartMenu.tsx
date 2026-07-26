@@ -145,8 +145,8 @@ export default function StartMenu({ onClose, onOpen }: StartMenuProps) {
           className="flex items-center gap-2 min-w-0 rounded-md px-1 -mx-1 hover:bg-black/10 transition-colors cursor-pointer"
           title="查看关于"
         >
-          <img src="/touxiang.jpg" alt="Topaz Blog" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-          <span className="text-xs font-medium text-gray-700 truncate">Topaz Blog</span>
+          <img src="/touxiang.jpg" alt="Munan Blog" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+          <span className="text-xs font-medium text-gray-700 truncate">Munan Blog</span>
         </button>
         <button
           className="flex items-center justify-center w-8 h-8 rounded hover:bg-black/10 transition-colors flex-shrink-0"

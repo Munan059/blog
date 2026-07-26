@@ -424,7 +424,7 @@ export default function Taskbar({ openWindows, minimizedWindows, onTaskbarClick,
                       </svg>
                       <div className="min-w-0">
                         <div className="text-[12px] font-medium text-gray-800 truncate">WLAN</div>
-                        <div className="text-[10.5px] text-gray-500 truncate">{wifiOn ? '已连接 · Topaz-5G' : '未连接'}</div>
+                        <div className="text-[10.5px] text-gray-500 truncate">{wifiOn ? '已连接 · Munan-5G' : '未连接'}</div>
                       </div>
                     </div>
                     {/* Toggle switch: off=white, on=blue */}
@@ -449,7 +449,7 @@ export default function Taskbar({ openWindows, minimizedWindows, onTaskbarClick,
                   {/* Network list (cosmetic) */}
                   <div className="space-y-0.5">
                     {[
-                      { name: 'Topaz-5G', connected: true, strength: 3 },
+                      { name: 'Munan-5G', connected: true, strength: 3 },
                       { name: 'ChinaNet-2.4G', connected: false, strength: 2 },
                       { name: 'CMCC-Web', connected: false, strength: 1 },
                     ].map((net) => (
