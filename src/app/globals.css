@@ -23,7 +23,7 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  font-family: 'Chicago', 'Geneva', 'Charcoal', system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 body {

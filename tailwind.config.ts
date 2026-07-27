@@ -28,7 +28,6 @@ const config: Config = {
         'pixel-stone': '#8a8a8a',
       },
       fontFamily: {
-        desktop: ['"Chicago"', '"Geneva"', '"Charcoal"', 'system-ui', 'sans-serif'],
         pixel: ['"Courier New"', '"Lucida Console"', 'monospace'],
       },
       animation: {
