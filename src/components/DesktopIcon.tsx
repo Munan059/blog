@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { DesktopIconData } from '@/lib/constants';
 import {
-  FileIcon, FolderIcon, TrashIcon, ArticleIcon, AboutIcon,
+  FileIcon, FolderIcon, ArticleIcon, AboutIcon,
   DemoIcon, DocsIcon, EmailIcon, QuestionIcon,
   BilibiliIcon, EssayIcon, FriendLinkIcon, GitHubIcon,
   XiaohongshuIcon,
@@ -12,6 +12,10 @@ import {
 
 const ThisPCImage: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <img src="/thispc_original.png" alt="此电脑" className={props.className} />
+);
+
+const TrashImage: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <img src="/recycle_bin_original.png" alt="回收站" className={props.className} />
 );
 
 export const iconMap: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = {
@@ -29,7 +33,7 @@ export const iconMap: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = 
   why: GitHubIcon,
   changelog: BilibiliIcon,
   handbook: ThisPCImage,
-  trash: TrashIcon,
+  trash: TrashImage,
   xiaohongshu: XiaohongshuIcon,
 };
 
