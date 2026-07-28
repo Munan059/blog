@@ -178,7 +178,7 @@ const Desktop = forwardRef<DesktopHandle>((_props, ref) => {
   };
 
   return (
-    <div className="fixed inset-0 top-10 pb-9 overflow-hidden" style={{ backgroundColor: '#1a1a2e' }}>
+    <div className="fixed inset-0 pb-9 overflow-hidden" style={{ backgroundColor: '#1a1a2e' }}>
       <ParallaxProvider>
         {/* Video background with mouse parallax */}
         <VideoParallaxBackground />
@@ -189,7 +189,7 @@ const Desktop = forwardRef<DesktopHandle>((_props, ref) => {
         {/* Center Illustration removed */}
 
       {/* Left side: main column + social column (GitHub / Bilibili / 小红书) */}
-      <div className="absolute left-4 md:left-6 top-2 z-20 flex flex-row gap-0 md:gap-1 items-start">
+      <div className="absolute left-4 md:left-6 top-12 z-20 flex flex-row gap-0 md:gap-1 items-start">
         {/* Main column */}
         <div className="flex flex-col gap-4 md:gap-5">
           {leftIcons.map((icon) => (
