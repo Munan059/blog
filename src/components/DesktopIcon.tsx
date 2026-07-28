@@ -6,9 +6,13 @@ import { DesktopIconData } from '@/lib/constants';
 import {
   FileIcon, FolderIcon, TrashIcon, ArticleIcon, AboutIcon,
   DemoIcon, DocsIcon, EmailIcon, QuestionIcon,
-  BilibiliIcon, ThisPCIcon, EssayIcon, FriendLinkIcon, GitHubIcon,
+  BilibiliIcon, EssayIcon, FriendLinkIcon, GitHubIcon,
   XiaohongshuIcon,
 } from './icons';
+
+const ThisPCImage: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <img src="/thispc_original.png" alt="此电脑" className={props.className} />
+);
 
 export const iconMap: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = {
   home: FileIcon,
@@ -24,7 +28,7 @@ export const iconMap: Record<string, React.FC<React.SVGProps<SVGSVGElement>>> = 
   question: QuestionIcon,
   why: GitHubIcon,
   changelog: BilibiliIcon,
-  handbook: ThisPCIcon,
+  handbook: ThisPCImage,
   trash: TrashIcon,
   xiaohongshu: XiaohongshuIcon,
 };
