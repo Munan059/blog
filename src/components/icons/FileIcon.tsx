@@ -13,10 +13,42 @@ export const FileIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 );
 
 // Folder icon
+// Project icon - Windows 11 style code window: blue title bar (dots) + white body with blue </> glyph
+// Shares the approved "white/light-blue body + blue accent + soft shadow" language
 export const FolderIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    <path d="M6 12C6 10.9 6.9 10 8 10H18L22 14H40C41.1 14 42 14.9 42 16V36C42 37.1 41.1 38 40 38H8C6.9 38 6 37.1 6 36V12Z" fill="#4a90d9" stroke="#3a7bc8" strokeWidth="1" />
-    <path d="M6 12C6 10.9 6.9 10 8 10H18L22 14H8C6.9 14 6 14.9 6 16V12Z" fill="#6aacf0" stroke="#3a7bc8" strokeWidth="1" />
+    <defs>
+      <linearGradient id="w-body" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ffffff" />
+        <stop offset="1" stopColor="#d9e7f6" />
+      </linearGradient>
+      <linearGradient id="w-bar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#54c0ff" />
+        <stop offset="1" stopColor="#0a72cc" />
+      </linearGradient>
+      <linearGradient id="w-code" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#45baff" />
+        <stop offset="1" stopColor="#006ac4" />
+      </linearGradient>
+      <radialGradient id="w-sh" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stopColor="#14223d" stopOpacity="0.38" />
+        <stop offset="0.7" stopColor="#14223d" stopOpacity="0.15" />
+        <stop offset="1" stopColor="#14223d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse cx="24" cy="44.5" rx="16" ry="2.4" fill="url(#w-sh)" />
+    <path d="M4 11 Q4 7 8 7 H40 Q44 7 44 11 V36 Q44 40 40 40 H8 Q4 40 4 36 Z" fill="url(#w-body)" />
+    <path d="M4 11 Q4 7 8 7 H40 Q44 7 44 11 V14.5 H4 Z" fill="url(#w-bar)" />
+    <rect x="4.5" y="7.5" width="39" height="2.6" rx="1.3" fill="#ffffff" opacity="0.35" />
+    <rect x="8" y="9.8" width="12" height="2" rx="1" fill="#ffffff" opacity="0.7" />
+    <circle cx="32" cy="10.8" r="1.4" fill="#ffffff" opacity="0.95" />
+    <circle cx="36.2" cy="10.8" r="1.4" fill="#ffffff" opacity="0.8" />
+    <circle cx="40.4" cy="10.8" r="1.4" fill="#ffffff" opacity="0.65" />
+    <g stroke="url(#w-code)" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18.5 22 L13.5 27 L18.5 32" />
+      <path d="M29.5 22 L34.5 27 L29.5 32" />
+      <line x1="26" y1="20.5" x2="22" y2="33.5" />
+    </g>
   </svg>
 );
 
@@ -67,13 +99,30 @@ export const DocsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-// Email icon
+// Email icon - Windows 11 style envelope: white gradient body + blue gradient flap
 export const EmailIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    <rect x="4" y="12" width="40" height="26" rx="2" fill="white" stroke="#7a7a7a" strokeWidth="1.5" />
-    <path d="M4 12L24 28L44 12" stroke="#4a90d9" strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="butt" />
-    <path d="M4 38L18 24" stroke="#ccc" strokeWidth="1" />
-    <path d="M44 38L30 24" stroke="#ccc" strokeWidth="1" />
+    <defs>
+      <linearGradient id="m-body" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ffffff" />
+        <stop offset="1" stopColor="#d9e7f6" />
+      </linearGradient>
+      <linearGradient id="m-flap" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#54c0ff" />
+        <stop offset="1" stopColor="#0a72cc" />
+      </linearGradient>
+      <radialGradient id="m-sh" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stopColor="#14223d" stopOpacity="0.38" />
+        <stop offset="0.7" stopColor="#14223d" stopOpacity="0.15" />
+        <stop offset="1" stopColor="#14223d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse cx="24" cy="43" rx="16" ry="2.4" fill="url(#m-sh)" />
+    <rect x="4" y="11" width="40" height="28" rx="4" fill="url(#m-body)" />
+    <path d="M4 15 Q4 11 8 11 H40 Q44 11 44 15 L24 30 Z" fill="url(#m-flap)" />
+    <path d="M4 15 Q4 11 8 11 H40 Q44 11 44 15" stroke="#bfe4ff" strokeWidth="1" opacity="0.7" fill="none" />
+    <path d="M5.5 38 L18.5 26 M42.5 38 L29.5 26" stroke="#9db8d8" strokeWidth="1" opacity="0.6" />
+    <rect x="4.5" y="11.5" width="39" height="3" rx="1.5" fill="#ffffff" opacity="0.4" />
   </svg>
 );
 
@@ -198,15 +247,43 @@ export const MunanLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-// Article icon - Windows Notepad .txt style: white page, folded corner, blue text lines
+// Article icon - Windows 11 style document: gradient page, folded corner, blue text lines, back sheet
 export const ArticleIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    <path d="M10 4 H30 L40 14 V44 H10 Z" fill="white" stroke="#7a7a7a" strokeWidth="1.2" strokeLinejoin="round" />
-    <path d="M30 4 V14 H40" fill="#dcdcdc" stroke="#7a7a7a" strokeWidth="1.2" strokeLinejoin="round" />
-    <line x1="15" y1="20" x2="35" y2="20" stroke="#4a90d9" strokeWidth="1.6" />
-    <line x1="15" y1="26" x2="35" y2="26" stroke="#4a90d9" strokeWidth="1.6" />
-    <line x1="15" y1="32" x2="35" y2="32" stroke="#4a90d9" strokeWidth="1.6" />
-    <line x1="15" y1="38" x2="28" y2="38" stroke="#4a90d9" strokeWidth="1.6" />
+    <defs>
+      <linearGradient id="a-page" x1="0" y1="0" x2="0.3" y2="1">
+        <stop offset="0" stopColor="#ffffff" />
+        <stop offset="1" stopColor="#d4e6fa" />
+      </linearGradient>
+      <linearGradient id="a-back" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#bcd8f2" />
+        <stop offset="1" stopColor="#8fb9e6" />
+      </linearGradient>
+      <linearGradient id="a-fold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#eef6ff" />
+        <stop offset="1" stopColor="#9fc8ee" />
+      </linearGradient>
+      <linearGradient id="a-line" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#45baff" />
+        <stop offset="1" stopColor="#006ac4" />
+      </linearGradient>
+      <radialGradient id="a-sh" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stopColor="#14223d" stopOpacity="0.38" />
+        <stop offset="0.7" stopColor="#14223d" stopOpacity="0.15" />
+        <stop offset="1" stopColor="#14223d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse cx="24" cy="44.8" rx="14" ry="2.4" fill="url(#a-sh)" />
+    <g transform="rotate(4 26 24)">
+      <path d="M13 4.5 Q13 2.8 14.8 2.8 H31 L40 11 V40 Q40 42 38 42 H14.8 Q13 42 13 40 Z" fill="url(#a-back)" />
+    </g>
+    <path d="M9 7 Q9 5 11 5 H30 L40 15 V42 Q40 44 38 44 H11 Q9 44 9 42 Z" fill="url(#a-page)" />
+    <path d="M30 5 V13 Q30 15 32 15 H40 Z" fill="url(#a-fold)" />
+    <path d="M11 5.5 H22 L9.5 19 V7.5 Q9.5 5.5 11 5.5 Z" fill="#ffffff" opacity="0.55" />
+    <rect x="15" y="20" width="20" height="3" rx="1.5" fill="url(#a-line)" />
+    <rect x="15" y="26.5" width="20" height="3" rx="1.5" fill="url(#a-line)" opacity="0.85" />
+    <rect x="15" y="33" width="20" height="3" rx="1.5" fill="url(#a-line)" opacity="0.7" />
+    <rect x="15" y="39.5" width="12.5" height="3" rx="1.5" fill="url(#a-line)" opacity="0.5" />
   </svg>
 );
 
@@ -299,37 +376,94 @@ export const UserFolderIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) =
   </svg>
 );
 
-// About icon - Windows system info panel: white rounded panel with blue "i"
-// Matches right-side EmailIcon/ThisPCIcon visual language (white body + gray stroke + blue accent)
+// About icon - Windows 11 style ID card: white card, blue avatar with silhouette, blue info lines
+// Shares the approved "white/light-blue body + blue accent + soft shadow" language of ArticleIcon/EmailIcon
 export const AboutIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    <circle cx="24" cy="24" r="18" fill="white" stroke="#7a7a7a" strokeWidth="1.5" />
-    <circle cx="24" cy="16" r="2.5" fill="#4a90d9" />
-    <rect x="22.5" y="20" width="3" height="14" rx="1" fill="#4a90d9" />
+    <defs>
+      <linearGradient id="c-card" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ffffff" />
+        <stop offset="1" stopColor="#d9e7f6" />
+      </linearGradient>
+      <linearGradient id="c-av" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#5ac2ff" />
+        <stop offset="1" stopColor="#0a72cc" />
+      </linearGradient>
+      <linearGradient id="c-line" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#45baff" />
+        <stop offset="1" stopColor="#006ac4" />
+      </linearGradient>
+      <clipPath id="c-clip">
+        <circle cx="15.5" cy="24" r="7.3" />
+      </clipPath>
+      <radialGradient id="c-sh" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stopColor="#14223d" stopOpacity="0.38" />
+        <stop offset="0.7" stopColor="#14223d" stopOpacity="0.15" />
+        <stop offset="1" stopColor="#14223d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse cx="24" cy="44" rx="15" ry="2.4" fill="url(#c-sh)" />
+    <rect x="4" y="9" width="40" height="30" rx="4" fill="url(#c-card)" />
+    <rect x="4.5" y="9.5" width="39" height="3" rx="1.5" fill="#ffffff" opacity="0.4" />
+    <circle cx="15.5" cy="24" r="7.5" fill="url(#c-av)" />
+    <ellipse cx="13" cy="19.5" rx="3.5" ry="2" fill="#ffffff" opacity="0.4" />
+    <g clipPath="url(#c-clip)">
+      <circle cx="15.5" cy="21.8" r="2.7" fill="#ffffff" />
+      <path d="M15.5 25.4 C12.2 25.4 10 27.7 9.6 30.6 Q9.55 31.3 10.3 31.3 H20.7 Q21.45 31.3 21.4 30.6 C21 27.7 18.8 25.4 15.5 25.4 Z" fill="#ffffff" />
+    </g>
+    <rect x="27" y="16" width="13" height="2.6" rx="1.3" fill="url(#c-line)" />
+    <rect x="27" y="22" width="13" height="2.6" rx="1.3" fill="url(#c-line)" opacity={0.8} />
+    <rect x="27" y="28" width="9" height="2.6" rx="1.3" fill="url(#c-line)" opacity={0.6} />
   </svg>
 );
 
 // Essay icon - open diary/journal (打开的日记本: 双页+装订+横线)
 // Diary motif for "随笔" (personal journal entries)
 // Distinct from ArticleIcon (single document page) by spread double-page + center binding
+// Essay icon - Windows 11 style coil notepad + pencil: white page, blue binding rings, blue lines, blue pencil
+// Shares the approved "white/light-blue body + blue accent + soft shadow" language
 export const EssayIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    {/* left page */}
-    <path d="M24 12 L8 14 L8 38 L24 36 Z" fill="white" stroke="#888" strokeWidth="1.3" strokeLinejoin="round" />
-    {/* right page */}
-    <path d="M24 12 L40 14 L40 38 L24 36 Z" fill="white" stroke="#888" strokeWidth="1.3" strokeLinejoin="round" />
-    {/* binding (center spine) */}
-    <path d="M24 12 L24 36" stroke="#666" strokeWidth="1.5" />
-    {/* left page ruled lines */}
-    <line x1="11" y1="19" x2="21" y2="18.5" stroke="#a8c2dc" strokeWidth="1" />
-    <line x1="11" y1="24" x2="21" y2="23.5" stroke="#a8c2dc" strokeWidth="1" />
-    <line x1="11" y1="29" x2="21" y2="28.5" stroke="#a8c2dc" strokeWidth="1" />
-    <line x1="11" y1="34" x2="19" y2="33.5" stroke="#a8c2dc" strokeWidth="1" />
-    {/* right page ruled lines */}
-    <line x1="27" y1="18.5" x2="37" y2="19" stroke="#a8c2dc" strokeWidth="1" />
-    <line x1="27" y1="23.5" x2="37" y2="24" stroke="#a8c2dc" strokeWidth="1" />
-    <line x1="27" y1="28.5" x2="37" y2="29" stroke="#a8c2dc" strokeWidth="1" />
-    <line x1="29" y1="33.5" x2="37" y2="34" stroke="#a8c2dc" strokeWidth="1" />
+    <defs>
+      <linearGradient id="n-page" x1="0" y1="0" x2="0.2" y2="1">
+        <stop offset="0" stopColor="#ffffff" />
+        <stop offset="1" stopColor="#d8e9fb" />
+      </linearGradient>
+      <linearGradient id="n-band" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#bcd8f2" />
+        <stop offset="1" stopColor="#9ec4ea" />
+      </linearGradient>
+      <linearGradient id="n-line" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stopColor="#45baff" />
+        <stop offset="1" stopColor="#006ac4" />
+      </linearGradient>
+      <linearGradient id="n-pen" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#54c0ff" />
+        <stop offset="1" stopColor="#0a72cc" />
+      </linearGradient>
+      <radialGradient id="n-sh" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stopColor="#14223d" stopOpacity="0.38" />
+        <stop offset="0.7" stopColor="#14223d" stopOpacity="0.15" />
+        <stop offset="1" stopColor="#14223d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse cx="23" cy="44.8" rx="14" ry="2.4" fill="url(#n-sh)" />
+    <path d="M8 10 Q8 8 10 8 H34 Q36 8 36 10 V40 Q36 42 34 42 H10 Q8 42 8 40 Z" fill="url(#n-page)" />
+    <path d="M8 10 Q8 8 10 8 H34 Q36 8 36 10 V15 H8 Z" fill="url(#n-band)" />
+    <circle cx="12.5" cy="8.5" r="2.4" fill="#eaf4ff" stroke="#0a6fc8" strokeWidth="1.6" />
+    <circle cx="18.5" cy="8.5" r="2.4" fill="#eaf4ff" stroke="#0a6fc8" strokeWidth="1.6" />
+    <circle cx="24.5" cy="8.5" r="2.4" fill="#eaf4ff" stroke="#0a6fc8" strokeWidth="1.6" />
+    <circle cx="30.5" cy="8.5" r="2.4" fill="#eaf4ff" stroke="#0a6fc8" strokeWidth="1.6" />
+    <path d="M10 8.3 H18 L8.5 18 V9.5 Q8.5 8.3 10 8.3 Z" fill="#ffffff" opacity="0.5" />
+    <rect x="13" y="20" width="17" height="2.6" rx="1.3" fill="url(#n-line)" />
+    <rect x="13" y="26" width="15" height="2.6" rx="1.3" fill="url(#n-line)" opacity={0.8} />
+    <rect x="13" y="32" width="11" height="2.6" rx="1.3" fill="url(#n-line)" opacity={0.6} />
+    <g transform="rotate(-45 36 36)">
+      <rect x="33.8" y="24" width="4.4" height="15" rx="1.1" fill="url(#n-pen)" />
+      <rect x="33.8" y="24" width="4.4" height="2.4" rx="1.1" fill="#bcd8f2" />
+      <path d="M33.8 39 L36 43.5 L38.2 39 Z" fill="#eaf4ff" />
+      <path d="M35.2 42.2 L36 43.5 L36.8 42.2 Z" fill="#0a5fb8" />
+    </g>
   </svg>
 );
 
@@ -357,21 +491,36 @@ export const XiaohongshuIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) 
 // Distinct from ArticleIcon (single document) by stacked cards + avatar motif
 export const FriendLinkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-    {/* back cards (tilted, layered depth) */}
-    <g transform="rotate(-6 24 24)">
-      <rect x="7" y="11" width="30" height="21" rx="2" fill="#dcdcdc" stroke="#888" strokeWidth="1" />
+    <defs>
+      <radialGradient id="fl-ball" cx="0.36" cy="0.28" r="0.95">
+        <stop offset="0" stopColor="#7fd8ff" />
+        <stop offset="0.55" stopColor="#1e9ff0" />
+        <stop offset="1" stopColor="#005cb6" />
+      </radialGradient>
+      <linearGradient id="fl-gloss" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor="#ffffff" stopOpacity="0.85" />
+        <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
+      </linearGradient>
+      <clipPath id="fl-clip">
+        <circle cx="24" cy="23" r="17.3" />
+      </clipPath>
+      <radialGradient id="fl-sh" cx="0.5" cy="0.5" r="0.5">
+        <stop offset="0" stopColor="#14223d" stopOpacity="0.4" />
+        <stop offset="0.7" stopColor="#14223d" stopOpacity="0.15" />
+        <stop offset="1" stopColor="#14223d" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse cx="24" cy="44.8" rx="14" ry="2.4" fill="url(#fl-sh)" />
+    <g transform="rotate(-18 24 24)">
+      <ellipse cx="24" cy="26" rx="22" ry="6.5" fill="none" stroke="#cfe8ff" strokeWidth="3.5" />
     </g>
-    <g transform="rotate(5 24 24)">
-      <rect x="8" y="12" width="30" height="21" rx="2" fill="#ececec" stroke="#888" strokeWidth="1" />
+    <circle cx="24" cy="23" r="17.5" fill="url(#fl-ball)" />
+    <g clipPath="url(#fl-clip)">
+      <path d="M9 29 A17.5 17.5 0 0 0 39 29 A22 22 0 0 1 9 29 Z" fill="#00417e" opacity="0.3" />
     </g>
-    {/* top card */}
-    <rect x="6" y="13" width="34" height="23" rx="2.5" fill="white" stroke="#555" strokeWidth="1.4" />
-    {/* avatar */}
-    <circle cx="15" cy="22" r="5" fill="#4a90d9" />
-    <path d="M15 19.5 a2.5 2.5 0 0 1 0 5 a2.5 2.5 0 0 1 0 -5" fill="#7ab8e8" opacity="0.55" />
-    {/* url lines */}
-    <line x1="23" y1="18.5" x2="37" y2="18.5" stroke="#555" strokeWidth="1.7" />
-    <line x1="23" y1="24" x2="34" y2="24" stroke="#aaa" strokeWidth="1.4" />
-    <line x1="23" y1="29" x2="37" y2="29" stroke="#aaa" strokeWidth="1.4" />
+    <ellipse cx="18" cy="13" rx="7.5" ry="4.2" fill="url(#fl-gloss)" opacity="0.5" transform="rotate(-16 18 13)" />
+    <g transform="rotate(-18 24 24)">
+      <path d="M2 26 A22 6.5 0 0 0 46 26" fill="none" stroke="#eaf5ff" strokeWidth="3.5" />
+    </g>
   </svg>
 );

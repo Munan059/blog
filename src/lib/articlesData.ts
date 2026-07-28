@@ -10,6 +10,7 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  { id: 14, date: '2026-07-28', title: '基于骁龙865的端侧模型与优化', tags: ['端侧AI', '模型部署', '学习笔记'], markdown: ARTICLES_MARKDOWN[14] },
   { id: 1, date: '2026-07-13', title: '从零搭建个人数字桌面', tags: ['Next.js', '前端'], markdown: ARTICLES_MARKDOWN[1] },
   { id: 2, date: '2026-07-03', title: '动效参数的手感', tags: ['vibe coding', '前端'] },
   { id: 3, date: '2026-06-25', title: 'AI Agent 开发入门笔记', tags: ['AI', 'Agent'] },
@@ -23,6 +24,4 @@ export const articles: Article[] = [
   { id: 11, date: '2026-02-14', title: '从 Hexo 到 Next.js 迁移记', tags: ['博客', '部署'] },
   { id: 12, date: '2026-02-04', title: '滤波器选型对比笔记', tags: ['滤波', '信号处理'] },
   { id: 13, date: '2025-12-02', title: '研0入学准备', tags: ['研究生', '规划'] },
-  { id: 14, date: '2025-10-18', title: '本科毕业设计复盘', tags: ['毕设', '控制工程'] },
-  { id: 15, date: '2025-07-05', title: 'C 语言指针难点梳理', tags: ['C', '学习笔记'] },
 ];

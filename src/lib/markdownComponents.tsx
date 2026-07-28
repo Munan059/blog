@@ -27,6 +27,17 @@ export const mdComponents: Components = {
       {children}
     </p>
   ),
+  ul: ({ children }) => (
+    <ul className="list-disc pl-6 my-3 space-y-1 text-gray-600 leading-relaxed" style={{ fontSize: 'clamp(13px, 2cqw, 16px)' }}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal pl-6 my-3 space-y-1 text-gray-600 leading-relaxed" style={{ fontSize: 'clamp(13px, 2cqw, 16px)' }}>
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   img: ({ src, alt }) => (
     // eslint-disable-next-line @next/next/no-img-element
     <img
