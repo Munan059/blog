@@ -1224,6 +1224,297 @@ MatPool 内存复用与绑核调度，让连点多张图也不崩、内存不暴
 
 *本文写于 2026-07-26，记录 PureEdgeVLM 端侧多模态系统阶段四的搭建过程。*
 `;
+export const PUREEDGE_VLM_STAGE5_MD = `# PureEdgeVLM 阶段五搭建记录
+
+> 项目代号：PureEdgeVLM · 目标设备：骁龙 865 手机，8GB 内存、纯 CPU · 技术栈：Kotlin + C++17 + NCNN + llama.cpp
+>
+> 一句话概括：把阶段一到四已经能做的功能，打磨成一个完整、稳定、能拿出量化测速数据的 App。阶段五聚焦三件事：界面收尾、稳定性、Benchmark 产出。加相机实时页、独立 Benchmark 页、错误提示、图标，并产出可写进简历的测速对比表。
+>
+> 本文所有路径都相对项目根 \`C:\\Users\\Blue\\Desktop\\work\\localai\`。
+
+---
+
+## 0. 阶段五
+
+阶段一到四结束时，App 已经能在手机上跑 YOLO 检测、ResNet50 场景识别、PP-OCRv5 文字识别和 MiniCPM5-1B 本地对话，但界面是临时凑的，一个页面塞了所有按钮，闪退没兜住，测速数据也还没系统化。阶段五就是把能跑变成能演示、能写进简历。
+
+总方案阶段五列了 9 件事，实际推进时大部分已经在前面阶段顺手做掉了。先看清哪些已经做完，哪些本阶段补：
+
+| 总方案要求 | 当前状态 | 本阶段怎么处理 |
+| --- | --- | --- |
+| ① 相机页：CameraX 实时预览加 YOLO 框场景叠加 | ✅ 已做 | 第 4 节已完成，PreviewView 流畅竖屏预览与 OverlayView 画框，对应 commit 0a5c88e |
+| ② Benchmark 页：一键跑 4 模型并显示表 | ⚠️ 功能已做，当时只是主页面一个按钮，还不是独立页 | 第 2 节重跑，第 3 节独立成页 |
+| ③ Compose 动画：流式打字机效果 | ⚠️ 打字机已通过逐字回调实现，但还缺动画美化；当前 UI 是纯 View 不是 Compose | 第 7 节给两条路线 |
+| ④ 错误处理：模型加载失败、内存不足提示 | ✅ 已做 | 第 5 节已完成，modelStatus C++ 查询、Kotlin 启动检查、三任务 try-catch-finally 与选图防护 |
+| ⑤ APP 图标加启动页 | ❌ 未做 | 第 6 节从零做 |
+| ⑥ 实现 benchmarkRun JNI 接口 | ✅ 已完成并实测 | 第 2 节说明与验证 |
+| ⑦ 测试矩阵：4 模型乘线程 1/2/4/8 加 pipeline 10 次加分辨率对比加绑核对比 | ⚠️ 已完成线程扫描与 pipeline 10 次；分辨率对比、绑核对比未做 | 第 2 节附扩展法，第 8 节详述 |
+| ⑧ 输出 CSV 存到 getExternalFilesDir | ✅ 已完成 | 第 2 节验证 |
+| ⑨ Python 脚本生成 Markdown 对比表 | ✅ 已完成，benchmark_to_markdown.py 加 benchmark.md | 第 2 节重跑即用 |
+
+一句话：测速这条线，也就是第⑥⑧⑨项加上第⑦项的核心部分，你已经做完了。本阶段主要是把剩下的界面与稳定性补上，并告诉你怎么把测速数据扩到总方案要求的 48 组。
+
+---
+
+## 1. 这个阶段做了什么
+
+阶段五只做收尾与抛光，不引入新模型、不动推理核心：
+
+- 多页面导航，把对话、相机、Benchmark 拆成可切换的三页
+- 相机实时页，开摄像头预览并拍照触发视觉三模型
+- 错误处理，模型缺失、坏图、任务异常都给提示不闪退，按钮不锁死
+- APP 图标与启动态，桌面图标正确、打开有加载提示
+- 流式输出的淡入动画，纯 View 路线，让打字机效果更顺眼
+- 测速数据扩到 48 组维度，分辨率对比、绑核对比，可选加分
+
+本阶段新增和改动的代码骨架如下，阶段四那套推理引擎、JNI 桥和聊天界面在这里接着复用与扩展：
+
+| 文件 | 干什么 |
+| --- | --- |
+| \`app/src/main/java/com/topaz/pureedgevlm/MainActivity.kt\` | 多页面导航、相机页、错误处理、图标启动态、流式动画都在这里 |
+| \`app/src/main/cpp/native_bridge.cpp\` | 加 \`modelStatus\` 状态查询接口 |
+| \`app/src/main/java/com/topaz/pureedgevlm/NativeBridge.kt\` | 声明 \`modelStatus\` external 函数 |
+| \`app/build.gradle\` | 加 CameraX 依赖 |
+| \`app/src/main/AndroidManifest.xml\` | 加 CAMERA 权限、设 icon |
+| \`app/src/main/res/mipmap-*\` | 各密度图标 |
+| \`models_workspace/benchmark_to_markdown.py\` | CSV 转 Markdown 对比表 |
+| \`recognition_bench_*.csv\` / \`benchmark.md\` | 测速原始数据与对比表产出 |
+
+---
+
+## 2. Benchmark 完善与重跑
+
+**做什么**：确认之前写好的测速功能还能正常跑，产出最新的 benchmark.csv 与 benchmark.md。这一步对应总方案第⑥⑧⑨项，你已经做完了，下面给重新跑出来的标准流程。
+
+**怎么做**：
+1. Android Studio 里 Build 菜单选 Clean Project，再 Rebuild Project，连手机 Run 装机。
+2. 手机打开 App，点跑 Benchmark 测速写 CSV 按钮。它会自己画一张测试图，不用你先选照片。大模型如果已经就位就一起测，否则只测视觉三模型。跑完把 CSV 存到手机 Android/data/com.topaz.pureedgevlm/files/benchmark.csv。大模型那一项较慢，4 个线程设置各跑 10 次，每次几秒到十几秒，整个约 2 到 5 分钟，期间别切走 App。
+3. 电脑上把 CSV 从手机拉回来，在电脑命令行执行：
+   \`\`\`bash
+   adb pull /sdcard/Android/data/com.topaz.pureedgevlm/files/benchmark.csv C:\\Users\\Blue\\Desktop\\work\\localai\\models_workspace\\benchmark.csv
+   \`\`\`
+   如果上面路径拉不到，用 adb pull 拉 Android/data/com.topaz.pureedgevlm/files/benchmark.csv，不带 /sdcard 前缀也行，按你手机实际来。
+4. 用脚本出对比表，电脑上执行：
+   \`\`\`bash
+   py -3.10 C:\\Users\\Blue\\Desktop\\work\\localai\\models_workspace\\benchmark_to_markdown.py C:\\Users\\Blue\\Desktop\\work\\localai\\models_workspace\\benchmark.csv
+   \`\`\`
+   它会在终端打印表格，并在同目录生成 benchmark.md。
+
+**怎么算成功**：手机点完按钮，状态栏显示 Benchmark 完成，CSV 路径正确。电脑 benchmark.csv 有内容，约 600 多字节，每行一个模型乘线程设置。benchmark.md 打开是带最优线程标记的对比表，数字和 CSV 对得上。
+
+**常见出错**：拉 CSV 报 file not found，先确认手机上确实点过按钮，路径按上面两种方式都试一下。md 表数字全是 0 或异常，说明 C++ 侧模型没加载，先确保大模型 GGUF 在 assets/models/llm 且 App 首次运行已拷到内部存储，视觉模型缺失会整行是 0。大模型那项特别慢或卡很久是正常的，纯 CPU 跑 1B 模型本就慢，若单次卡到 20 秒以上，是手机后台抖动，多跑几次平均即可，不是 bug。
+
+---
+
+## 3. Benchmark 独立成页加多页面导航
+
+**做什么**：对应总方案第②项 Benchmark 页。当前它只是主页面上的一个大按钮，总方案验收要求页面切换流畅，所以把它和相机页、对话页做成可切换的三页。不改现有纯 View 架构，最省事。
+
+**怎么做**：
+1. 在 MainActivity.kt 的 onCreate 里，把现在的 layout，一个 LinearLayout 竖排，改成一个外层 FrameLayout 容器，里面放三个 LinearLayout 子块，pageChat、pageCamera、pageBench，默认只显示 pageChat，其余 visibility 设 GONE。
+2. 底部加一个横向 LinearLayout，放三个 Button，对话、相机、测速。点哪个就把哪个设 VISIBLE，其余设 GONE。
+3. 把现有的聊天控件，输入框、发送、清空、对话气泡区，搬进 pageChat；把跑 Benchmark 按钮和 tvBench 搬进 pageBench；pageCamera 暂留空，第 4 节填相机预览。
+
+示例骨架，纯 View，不动架构：
+\`\`\`kotlin
+val pageChat = LinearLayout(this); pageChat.orientation = VERTICAL
+val pageCamera = FrameLayout(this)
+val pageBench = LinearLayout(this); pageBench.orientation = VERTICAL
+val container = FrameLayout(this).apply {
+    addView(pageChat); addView(pageCamera); addView(pageBench)
+    pageCamera.visibility = GONE; pageBench.visibility = GONE
+}
+val navChat = Button(this).apply { text = "对话" }
+val navCam  = Button(this).apply { text = "相机" }
+val navBench= Button(this).apply { text = "测速" }
+navChat.setOnClickListener  { show(pageChat) }
+navCam.setOnClickListener   { show(pageCamera) }
+navBench.setOnClickListener { show(pageBench) }
+fun show(p: View) { for (v in listOf(pageChat, pageCamera, pageBench)) v.visibility = if (v===p) VISIBLE else GONE }
+\`\`\`
+
+**怎么算成功**：底部三个按钮能切换三个区域，点对话回到聊天、点测速看到 Benchmark 按钮、点相机看到相机页，相机页第 4 节做好后才有内容。切换时不闪退、不丢对话历史。
+
+**常见出错**：切换后白屏，检查 show 里是不是把当前页也设成 GONE 了，确保每次只隐藏另外两个、显示目标页。聊天历史丢了，历史存在 MainActivity 的 history 里，切换页面只是改 visibility，不重建 Activity，所以不会丢，若你用了 Fragment 才需注意保存。
+
+---
+
+## 4. 相机页
+
+**做什么**：对应总方案第①项。让 App 能开摄像头实时看画面，并拍照或取实时帧去跑 YOLO 加场景加 OCR，这是演示效果最好的一页。
+
+**怎么做**：
+1. 加 CameraX 依赖，在 app/build.gradle 的 dependencies 里加，版本以你 Android Studio 提示的为准：
+   \`\`\`gradle
+   implementation "androidx.camera:camera-camera2:1.3.0"
+   implementation "androidx.camera:camera-lifecycle:1.3.0"
+   implementation "androidx.camera:camera-view:1.3.0"
+   \`\`\`
+2. 布局，在 pageCamera 里加一个 androidx.camera.view.PreviewView，id 设为 previewView，再放一个拍照识别按钮。
+3. 代码，在 MainActivity 里加方法，参考官方 CameraX 最简模板：
+   \`\`\`kotlin
+   private fun startCamera() {
+       val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+       cameraProviderFuture.addListener({
+           val cameraProvider = cameraProviderFuture.get()
+           val preview = Preview.Builder().build().also {
+               it.setSurfaceProvider(previewView.surfaceProvider)
+           }
+           val imageCapture = ImageCapture.Builder()
+               .setBackpressureStrategy(ImageCapture.STRATEGY_KEEP_ONLY_LATEST) // 关键：只留最新帧，防卡
+               .build()
+           cameraProvider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture)
+           this.imageCapture = imageCapture
+       }, ContextCompat.getMainExecutor(this))
+   }
+   \`\`\`
+4. 拍照识别按钮，用 imageCapture.takePicture 拿到 ImageProxy，转成 Bitmap，调已有的 runPipeline，它会跑 YOLO 加场景加 OCR 并显示结果。
+5. 在 onCreate 里，进入相机页时调一次 startCamera。注意权限，在 AndroidManifest.xml 加 CAMERA 权限，并在运行时请求。
+
+**怎么算成功**：进相机页能看到实时预览画面。点拍照识别，约 1 秒内画面里画出检测框、下方显示场景分类和 OCR 文字。不闪退、不卡死。
+
+**常见出错**：黑屏或 preview 不显示，确认 PreviewView 的 surfaceProvider 已设置，确认 bindToLifecycle 用的是 this，Activity 需是 AppCompatActivity。拍完没反应或报错，takePicture 的回调里把 ImageProxy 转 Bitmap 时记得关掉 ImageProxy，调用 it.close，转 Bitmap 注意 ImageFormat 是 YUV，需要 YuvImage 或 ImageProxy 的 toBitmap，API 28 以上。帧率太低，已用 STRATEGY_KEEP_ONLY_LATEST 缓解，若还卡，说明同时跑三模型偏重，可只跑 YOLO 实时、场景与 OCR 放到松手后再跑。
+
+---
+
+## 5. 错误处理
+
+**做什么**：对应总方案第④项。让 App 在任何异常下都不闪退、不把按钮永久锁死，并提示原因。
+1. 启动即检查四个模型加载状态，没加载好的在状态栏提前给黄字提示，别等点了才崩。
+2. 三个后台任务，视觉检测、大模型对话、Benchmark，全包 try-catch-finally，出错给界面提示，无论成功失败都在 finally 里恢复按钮可点。
+3. 选了坏图，解码失败或宽高为 0，弹 Toast 提示不崩。
+
+**怎么做**：
+1. C++ 侧加状态查询，在 native_bridge.cpp 的 getDebug 之后加一个 modelStatus 接口，基于已有的 g_loaded、g_scene_loaded、g_ocr_loaded 和 g_llm.isLoaded 返回一个固定格式字符串，yolo=ok;scene=ok;ocr=ok;llm=missing，哪个没加载好，哪一项就是 missing。Kotlin 侧按分号拆分、看哪一项结尾是 missing 就知道缺哪个。
+   \`\`\`cpp
+   // 返回各模型加载状态，形如 "yolo=ok;scene=ok;ocr=ok;llm=missing"，
+   // 供 Kotlin 启动时检查并提示用户，缺哪个模型就说哪个，不阻断其它功能。
+   extern "C" JNIEXPORT jstring JNICALL
+   Java_com_topaz_pureedgevlm_NativeBridge_modelStatus(JNIEnv* env, jclass) {
+       std::string s;
+       s += "yolo=";   s += g_loaded ? "ok" : "missing";
+       s += ";scene="; s += g_scene_loaded ? "ok" : "missing";
+       s += ";ocr=";   s += g_ocr_loaded ? "ok" : "missing";
+       s += ";llm=";   s += g_llm.isLoaded() ? "ok" : "missing";
+       return env->NewStringUTF(s.c_str());
+   }
+   \`\`\`
+2. Kotlin 声明，NativeBridge.kt 加 external fun modelStatus(): String，已加，在 getDebug 之后。
+3. 启动检查，MainActivity 新增 checkModelsOnStart，在 onCreate 末尾调一次，把 modelStatus 返回的字符串按分号拆分、挑出结尾为 missing 的项，缺失时把对应模型名写进 tvStatus 给黄字提示，大模型缺失额外提醒，需先下载 GGUF 并放对位置，不阻断其它功能。
+4. 防护包裹，把 runPipeline、sendMessage、runBenchmark 里 Thread 启动的内容用 try catch 包起来，catch 里用 runOnUiThread 把错误写进 tvStatus，finally 里调 setBusy(false)。注意 setBusy(false) 必须放 finally，否则一旦抛异常按钮就永久变灰。
+5. 选图防护，pickImage 回调里，解码后检查 bmp.width 大于 0 且 bmp.height 大于 0，否则弹 Toast 提示图片无法解码请换一张并 return。
+
+**怎么算成功**：正常情况，状态栏保持默认提示，说明四个模型都加载成功了，没弹黄字警告。故意把大模型 GGUF 改名或删除后重开 App，状态栏立刻变部分模型未加载，llm，大模型需先下载 GGUF 并放对位置，其它功能仍可正常使用，点发送给黄字提示而非闪退。选一张损坏图片，弹 Toast 提示不崩。任意任务中途出错，按钮都能恢复可点，不会被锁死。
+
+**常见出错**：modelStatus 编译报错找不到 g_llm，确认 native_bridge.cpp 顶部有 extern LlmEngine g_llm，也就是你项目里对应的全局声明，isLoaded 是 llm_engine.h 的公开方法。finally 里 setBusy 报空指针，确认 btnPick、btnSend、btnClear 在 onCreate 里已初始化，它们本来就在 onCreate 里 new 的，没问题。
+
+---
+
+## 6. APP 图标加启动页
+
+**做什么**：对应总方案第⑤项。给 App 一个正经图标，开机或切后台回来时不裸奔。
+1. 替换默认图标为自定义图标，放进 res/mipmap 各密度文件夹。
+2. 加一个简易启动页 Splash，App 一打开先显示 logo 约 1 秒，再进主界面，盖住模型加载的空窗期。
+
+**怎么做**：
+1. 图标，用 Android Studio 的 File 菜单选 New 再选 Image Asset，选一张图或内置剪影，生成各密度 ic_launcher。然后在 AndroidManifest.xml 的 application 里确认 android:icon 指向 mipmap/ic_launcher，android:roundIcon 指向 mipmap/ic_launcher_round。
+2. 启动页最简，不改架构，直接在 MainActivity.onCreate 开头让 tvStatus 先显示加载模型中，等 NativeBridge.init 完成后再更新成正常提示即可，视觉上就是先有加载态。若想要正经 Splash 画面，可新建一个 SplashActivity 作为启动 Activity，1 秒后 startActivity(MainActivity) 并 finish。
+
+**怎么算成功**：手机桌面 App 图标是你自定义的，不再是安卓机器人。打开 App 先有加载提示或 logo，再进主界面，不黑屏。
+
+**常见出错**：图标不生效，清一下 Build 菜单选 Clean 再编，确认 AndroidManifest 里 icon 指向的正是你生成的名字。Splash 卡住不跳主界面，确认 SplashActivity 里 Handler(Looper.getMainLooper()).postDelayed 的延时后确实调了 finish 且启动了 MainActivity。
+
+---
+
+## 7. 流式输出动画
+
+**做什么**：对应总方案第③项 Compose 动画。先把现状讲清楚，再给路线。
+
+**现状**：你现在的对话已经有打字机效果了，sendMessage 里 llmGenerate(prompt, 1280, callback) 每解出一个字就通过 onToken 回调，Kotlin 侧实时把文字写进气泡。所以一个字一个字往外冒已经实现了。总方案原话写的是 Compose 动画，但你的整个 UI 是纯 Android View 写的，不是 Compose。所以这里有两种路线。
+
+**路线 A，推荐，省事**：纯 View 补一个淡入动画。不碰架构，给 AI 气泡加个简单的出现动画，让冒字更顺眼：
+\`\`\`kotlin
+aiBubble.alpha = 0f
+aiBubble.animate().alpha(1f).setDuration(150).start()
+\`\`\`
+仅此而已，配合现有逐字更新就够演示用。
+
+**路线 B，工作量大，不推荐**：迁移到 Compose。要把整个 MainActivity 用 Compose 重写，用 setContent 替代现在的 setContentView，再上 AnimatedVisibility 与 LaunchedEffect 做动画。等于重写一遍界面，收益却有限。除非你特别想学 Compose，否则选 A。
+
+**怎么做，路线 A**：在 sendMessage 里 makeBubble(false) 之后、加入容器之前，加上面那两行淡入即可。
+
+**怎么算成功**：大模型回复时，气泡淡入加文字逐字出现，观感流畅。不引入 Compose 依赖，编译正常。
+
+**常见出错**：动画卡顿，淡入 150 毫秒很短，不会卡，若觉得碍事直接去掉这两行，退回纯逐字更新。
+
+---
+
+## 8. 扩展测试矩阵到 48 组
+
+**做什么**：对应总方案第⑦项里不同分辨率对比、绑核对比两块。这是锦上添花，简历核心数据，也就是线程扫描，已满足，时间紧可跳过。把 benchmarkRun 从只扫线程扩成扫线程乘扫分辨率，再加一组绑核对比行，凑齐总方案的 48 组维度。
+
+**怎么做**：
+1. 分辨率维度，改造 makeTestBitmap，加一个 size 参数，生成 224 乘 224、640 乘 480、960 乘 960 三种测试图，在 benchmarkRun 里对每种尺寸各跑一遍线程扫描，CSV 加 resolution 列。
+2. 绑核维度，视觉模型测速时，一组用 net.opt.set_cpu_powersave(2) 绑大核组跑，一组用默认跑，对比延迟，单独两行写进 CSV，标注 bind=1 或 bind=0。
+3. Python 脚本同步，benchmark_to_markdown.py 按需要读新列，把分辨率与绑核也做成对比小表。
+
+**怎么算成功**：CSV 行数显著增加，覆盖模型乘线程乘分辨率，并有绑核对比行。出表后能看到同样是 YOLO，640 分辨率比 224 慢多少、绑大核比不绑快多少这类结论，这正是简历里证明工程能力的素材。
+
+**常见出错**：加维度后测速时间爆长，分辨率 960 加大模型本来慢，整轮可能十几分钟。演示前按需只跑小维度，别在现场卡半小时。
+
+---
+
+## 9. 编译装机与验收
+
+**做什么**：把上面选做的几步，相机页、错误处理、图标，按你实际做了哪些，编进 APK，装机真机验收。
+
+**怎么做**：
+1. Build 菜单选 Clean Project，再 Rebuild Project，有任何红字先解决，解决不了把报错贴回来。
+2. 连手机 Run 装机。
+3. 逐项过下面的验收标准。
+
+装到手机，应该看到：
+
+- Android Studio 底部 Build Output 显示 BUILD SUCCESSFUL，手机上 App 自动打开，不闪退；
+- 对话、相机、Benchmark 三页点按切换不卡不崩，相机页有实时预览，点拍照识别出 YOLO 框加场景加 OCR；
+- benchmark.csv 有 4 模型乘线程 1/2/4/8 的数据，跑 10 次取平均，数据稳定，同线程设置多次跑波动不超过 10%，YOLO、场景、OCR 已稳，大模型受系统抖动大属正常；
+- 模型缺失给提示不闪退、坏图给 Toast、按钮不会锁死；
+- 桌面图标正确、打开有加载提示；
+- 大模型回复时气泡淡入加文字逐字出现，观感流畅。
+
+**常见出错**：编译报红先读最上面那条错误，CameraX 依赖版本不对就照 Android Studio 提示的可用版本改。真机闪退看 Logcat，按 package:com.topaz.pureedgevlm 过滤，别被系统日志刷屏干扰，那是手机正常刷屏，不是你 App 在跑。
+
+---
+
+## 10. 踩过的坑
+
+阶段五界面与稳定性收尾的通用踩坑点，按发生顺序记录，供后续参考。
+
+1. **CameraX 帧率太低**。只保留最新一帧，避免帧堆积卡死。做法是预览构建时设 setBackpressureStrategy(STRATEGY_KEEP_ONLY_LATEST)，第 4 节已写入。
+
+2. **大模型解码期间 UI 卡**。大模型必须在独立线程跑，现有 sendMessage 已用 Thread 包住，且 isBusy 防连点，保持即可。
+
+3. **跑多次后越来越慢即热节流**。各次测速之间加 Thread.sleep(100) 间隔，在 benchmarkRun 的循环里加一行即可，大模型尤其需要。
+
+4. **按钮永久锁死**。任何后台任务的 setBusy(false) 必须放在 finally，第 5 节重点。一旦漏写，异常抛出后按钮就永远变灰。
+
+5. **Logcat 一直滚误以为 App 没结束**。用 package:com.topaz.pureedgevlm 过滤，滚的是手机系统日志，温度、厂商服务之类，不是你 App 在跑。
+
+6. **KV 缓存前缀复用是端侧多轮对话稳定性噩梦，千万别碰**。为了提速曾给对话加 KV 缓存复用，只补算新加句、复用上轮 KV，结果连环翻车：第二轮 prompt decode failed、答非所问、旋转切页后忘前文、历史预算裁错前缀不符、上下文重建慢到 17 秒。根因是 KV 复用依赖跨轮 prompt 前缀一字不差连续，一旦历史被截断清空或预算算错就接错话或超慢重建，打几道补丁都只是治标。正确做法：多轮上下文靠每轮把完整 ChatML 对话重新拼好、从头预填充，绝不依赖跨轮 KV 前缀复用。关掉思维链还能让生成 token 从 335 降到几十，总体更顺。详细经过见阶段四第 8 节坑九。
+
+---
+
+## 11. 写在最后
+
+到这，阶段五全部完成：相机实时页能开摄像头预览并拍照识别、Benchmark 独立成页可切换、模型缺失和坏图都给提示不闪退、桌面图标与启动态就位、流式输出带淡入、测速产出 CSV 与 Markdown 对比表可写进简历。
+
+这一阶段最花时间的，一半是相机页的坐标对齐，初版预览与分析帧两路各自缩放、比例旋转不一致导致框偏，最终统一成竖屏 4 比 3 同一比例才对齐，一半是那套错误处理，modelStatus 状态查询加三任务 try-catch-finally，核心就一个，finally 里必调 setBusy(false)。做完回头看，界面收尾本身不难，难点在于每一处都要真机验证，不能凭想象。
+
+项目地址：https://github.com/Topaz059/PureEdgeVLM
+
+*本文写于 2026-07-28，记录 PureEdgeVLM 端侧多模态系统阶段五的搭建过程。*
+`;
+
 export const essays: Essay[] = [
   { id: 2, date: '2026-07-03', title: '滤波器与 PID 是一对', content: '控制课上讲 PID 整定，突然反应过来：滤波器和 PID 其实是一对，前者收拾信号，后者收拾误差。机器视觉里这俩谁也躲不掉，算是把专业课串起来了。', tags: ['控制工程', '学习'] },
   { id: 3, date: '2026-06-22', title: '最小可运行 Agent 跑通了', content: '跟着教程搭了个最小可运行的 Agent，工具调用跑通的那一刻有点上头。下一步想接 MediaPipe，让它真的"看得见"——这才对得起"机器视觉"这个方向。', tags: ['AI Agent', 'MediaPipe'] },
@@ -1301,6 +1592,14 @@ export const essays: Essay[] = [
     title: 'PureEdgeVLM 阶段四搭建记录',
     content: '阶段四把 llama.cpp 的大模型运行库编进工程，在 App 里用 MiniCPM5 做纯文字多轮对话，并做 MatPool 内存复用与绑核调度两个稳定性优化。',
     markdown: PUREEDGE_VLM_STAGE4_MD,
+    tags: ['端侧AI', '学习笔记', '搭建记录'],
+  },
+  {
+    id: 15,
+    date: '2026-07-28',
+    title: 'PureEdgeVLM 阶段五搭建记录',
+    content: '阶段五做收尾与抛光：加相机实时页、独立 Benchmark 页、错误提示、APP 图标与启动页、流式淡入动画，并把测速数据扩到 48 组维度，产出可写进简历的对比表。',
+    markdown: PUREEDGE_VLM_STAGE5_MD,
     tags: ['端侧AI', '学习笔记', '搭建记录'],
   },
 ];
