@@ -1,5 +1,7 @@
 <div align="center">
 
+🌐 **中文** | [English](README_EN.md)
+
 # 🖥️ Munan Blog · 数字桌面
 
 **一句话定位：把个人博客做成 Windows 11 风格的可交互桌面，点图标开窗口、拖窗口，任务栏搜索直接深链到某篇随笔/文章；全程零服务端，一条 `npm run build` 产出纯静态站，连上 Cloudflare Pages 即上线。**
