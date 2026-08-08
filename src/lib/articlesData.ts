@@ -10,6 +10,8 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  { id: 15, date: '2026-08-08', title: 'coding-review项目复盘', tags: ['开源', 'AI Agent', '代码审查'], markdown: ARTICLES_MARKDOWN[15] },
+
   { id: 14, date: '2026-07-28', title: '基于骁龙865的端侧模型与优化', tags: ['端侧AI', '模型部署', '学习笔记'], markdown: ARTICLES_MARKDOWN[14] },
   { id: 1, date: '2026-07-13', title: '从零搭建个人数字桌面', tags: ['Next.js', '前端'], markdown: ARTICLES_MARKDOWN[1] },
   { id: 2, date: '2026-07-03', title: '动效参数的手感', tags: ['vibe coding', '前端'] },
