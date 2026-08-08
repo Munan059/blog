@@ -17,6 +17,15 @@ type Project = {
 
 const projects: Project[] = [
   {
+    id: 8,
+    title: 'coding-review',
+    date: '2026-08-08',
+    content: '基于 AgentTeams 的多智能体代码审查系统：协调官拆解任务，审查员只读挑毛病，修复员按单改码，测试员兜底验证，所有人共用一块状态板。三个真实案例全部跑通到汇总关卡，实测 30/30。',
+    tags: ['AI Agent', 'Code Review', 'AgentTeams'],
+    // 复用 coding-review 项目复盘文章作为详情正文
+    markdown: ARTICLES_MARKDOWN[15],
+  },
+  {
     id: 7,
     title: '个人博客',
     date: '2026-07-13',
