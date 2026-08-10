@@ -178,7 +178,7 @@ const Desktop = forwardRef<DesktopHandle>((_props, ref) => {
   };
 
   return (
-    <div className="fixed inset-0 pb-9 overflow-hidden" style={{ backgroundColor: '#1a1a2e' }}>
+    <div className="absolute inset-0 pb-9 overflow-hidden" style={{ backgroundColor: '#1a1a2e' }}>
       <ParallaxProvider>
         {/* Video background with mouse parallax */}
         <VideoParallaxBackground />
@@ -223,7 +223,7 @@ const Desktop = forwardRef<DesktopHandle>((_props, ref) => {
             className="absolute bg-white rounded-lg shadow-2xl border border-gray-300 overflow-hidden window-container flex flex-col"
             onMouseDown={() => setActiveWindow(windowId)}
             style={{
-              zIndex: activeWindow === windowId ? 40 : 30,
+              zIndex: maximizedWindows.includes(windowId) ? 60 : (activeWindow === windowId ? 40 : 30),
               ...(maximizedWindows.includes(windowId)
                 ? { left: '0', top: '0', right: '0', bottom: '0', width: 'auto', height: 'auto', marginLeft: 0, marginTop: 0, borderRadius: 0 }
                 : {
