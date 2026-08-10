@@ -10,6 +10,7 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  { id: 16, date: '2026-08-10', title: 'Andrej Karpathy 的 LLM 笔记', tags: ['LLM', '学习笔记', 'AI'], markdown: ARTICLES_MARKDOWN[16] },
   { id: 15, date: '2026-08-08', title: 'coding-review项目复盘', tags: ['开源', 'AI Agent', '代码审查'], markdown: ARTICLES_MARKDOWN[15] },
 
   { id: 14, date: '2026-07-28', title: '基于骁龙865的端侧模型与优化', tags: ['端侧AI', '模型部署', '学习笔记'], markdown: ARTICLES_MARKDOWN[14] },
