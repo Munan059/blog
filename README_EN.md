@@ -54,7 +54,7 @@ Munan Blog is a personal website you can use like an operating system inside you
 
 | Metric | Value |
 | --- | --- |
-| Source size | ~6,200 lines of TypeScript / TSX (under `src/`) |
+| Source size | ~7,501 lines of TypeScript / TSX (under `src/`) |
 | Desktop window modules | 8 (articles / essays / projects / about / friend links / mail / this PC / recycle bin) |
 | Video wallpaper | `public/yasuo.mp4`, 25 MB, committed to the repo |
 | Build output | `out/`, pure static, ready to host |
@@ -154,7 +154,7 @@ munan-desktop/
 │     ├─ constants.ts       # Desktop icons, menu config (data-driven entry)
 │     ├─ articlesData.ts    # Article list
 │     ├─ articlesContent.ts # Article bodies (Markdown strings)
-│     ├─ essaysData.ts      # Essay bodies (Markdown, ~990 lines)
+│     ├─ essaysData.ts      # Essay bodies (Markdown, 1602 lines)
 │     ├─ friendsData.ts     # Friend-link data
 │     └─ markdownComponents.tsx # Markdown render config
 ```

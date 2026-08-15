@@ -54,7 +54,7 @@ Munan Blog 是一个能在浏览器里当操作系统用的个人网站：桌面
 
 | 指标 | 数值 |
 | --- | --- |
-| 源码规模 | 约 6200 行 TypeScript / TSX（src/ 下） |
+| 源码规模 | 约 7501 行 TypeScript / TSX（src/ 下） |
 | 桌面窗口模块 | 8 个（文章/随笔/项目/关于/友链/邮箱/此电脑/回收站） |
 | 视频壁纸 | `public/yasuo.mp4`，25 MB，已入库 |
 | 构建产物 | `out/`，纯静态，可直接托管 |
@@ -154,7 +154,7 @@ munan-desktop/
 │     ├─ constants.ts       # 桌面图标、菜单配置（数据驱动入口）
 │     ├─ articlesData.ts    # 文章列表
 │     ├─ articlesContent.ts # 文章正文（Markdown 字符串）
-│     ├─ essaysData.ts      # 随笔正文（Markdown，~990 行）
+│     ├─ essaysData.ts      # 随笔正文（Markdown，1602 行）
 │     ├─ friendsData.ts     # 友链数据
 │     └─ markdownComponents.tsx # Markdown 渲染配置
 ```
