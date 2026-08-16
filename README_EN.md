@@ -117,7 +117,7 @@ Common scripts:
 ## 📂 Directory structure
 
 ```
-munan-desktop/
+blog/
 ├─ next.config.mjs          # Static export config (output:'export')
 ├─ tailwind.config.ts       # Theme colors / fonts / animation keyframes
 ├─ postcss.config.mjs
@@ -141,6 +141,10 @@ munan-desktop/
 │  │  ├─ DesktopRipple.tsx  # Click ripple
 │  │  ├─ VideoParallaxBackground.tsx # Video wallpaper + mouse parallax
 │  │  ├─ parallax/          # Mouse-parallax background (Wallpaper Engine style)
+│  │  │  ├─ ParallaxBackground.tsx
+│  │  │  ├─ ParallaxLayer.tsx
+│  │  │  ├─ ParallaxContext.tsx
+│  │  │  └─ index.ts
 │  │  ├─ icons/             # SVG components for each window / icon
 │  │  ├─ ArticlesPage.tsx   # Articles window (timeline)
 │  │  ├─ EssaysPage.tsx     # Essays window (search deep-link)

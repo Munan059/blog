@@ -117,7 +117,7 @@ npm run build
 ## 📂 目录结构
 
 ```
-munan-desktop/
+blog/
 ├─ next.config.mjs          # 静态导出配置（output:'export'）
 ├─ tailwind.config.ts       # 主题色 / 字体 / 动画 keyframes
 ├─ postcss.config.mjs
@@ -141,6 +141,10 @@ munan-desktop/
 │  │  ├─ DesktopRipple.tsx  # 点击波纹
 │  │  ├─ VideoParallaxBackground.tsx # 视频壁纸 + 鼠标视差
 │  │  ├─ parallax/          # 鼠标视差背景（Wallpaper Engine 风格）
+│  │  │  ├─ ParallaxBackground.tsx
+│  │  │  ├─ ParallaxLayer.tsx
+│  │  │  ├─ ParallaxContext.tsx
+│  │  │  └─ index.ts
 │  │  ├─ icons/             # 各窗口 / 图标的 SVG 组件
 │  │  ├─ ArticlesPage.tsx   # 文章窗口（时间线）
 │  │  ├─ EssaysPage.tsx     # 随笔窗口（搜索深链）
